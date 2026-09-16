@@ -309,7 +309,7 @@
                                 <input type="text" id="searchWargaInput" oninput="renderWargaTable()" placeholder="Cari nama kepala keluarga / HP..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
                             </div>
                             <select id="filterBlokSelect" onchange="renderWargaTable()" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
-                                <option value="ALL">Semua Blok Rumah</option>
+                                <option value="ALL">Semua Blok Rumah (A - Z)</option>
                             </select>
                         </div>
                         <button onclick="openModalWarga()" class="admin-only hidden bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-indigo-600/20 flex items-center justify-center space-x-2 transition-all">
@@ -1693,26 +1693,65 @@
             renderKasTable();
         }
 
+        function isMatchingBlockLetter(blokStr, letter) {
+            if (!blokStr) return false;
+            const clean = blokStr.trim().toUpperCase();
+            const target = letter.toUpperCase();
+            
+            // Hapus awalan "BLOK" jika ada (misal: "BLOK A1" -> "A1", "BLOK A" -> "A")
+            const afterBlok = clean.replace(/^BLOK\s*[-/.]?\s*/, '');
+            
+            // Cocokkan huruf target jika diikuti angka, spasi, tanda hubung, garis miring, titik, atau akhir teks (bukan huruf alfabet lain)
+            // Contoh: A1, A-04, A/12, A 05, A cocok dengan 'A'. Tapi AA, RT, ROSE tidak cocok dengan 'A' / 'R'.
+            const pattern = new RegExp('^' + target + '(?![A-Z])', 'i');
+            return pattern.test(afterBlok);
+        }
+
+        function matchesBlockFilter(blokStr, filterVal) {
+            if (!filterVal || filterVal === 'ALL') return true;
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+            if (filterVal === 'LAINNYA') {
+                return !letters.some(letter => isMatchingBlockLetter(blokStr, letter));
+            }
+            return isMatchingBlockLetter(blokStr, filterVal);
+        }
+
         function updateBlockFilterOptions() {
-            const uniqueBlocks = [...new Set(wargaData.map(w => w.blok.trim()))].sort();
             const filterWargaSelect = document.getElementById('filterBlokSelect');
             const filterIuranSelect = document.getElementById('iuranFilterBlokSelect');
 
-            if (!filterWargaSelect || !filterIuranSelect) return;
+            if (!filterWargaSelect && !filterIuranSelect) return;
 
-            const currentWargaVal = filterWargaSelect.value;
-            const currentIuranVal = filterIuranSelect.value;
+            const currentWargaVal = filterWargaSelect ? filterWargaSelect.value : 'ALL';
+            const currentIuranVal = filterIuranSelect ? filterIuranSelect.value : 'ALL';
 
-            let optionsHtml = '<option value="ALL">Semua Blok Rumah</option>';
-            uniqueBlocks.forEach(blok => {
-                optionsHtml += `<option value="${blok}">${blok}</option>`;
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+            let optionsHtmlWarga = '<option value="ALL">Semua Blok Rumah (A - Z)</option>';
+            let optionsHtmlIuran = '<option value="ALL">Semua Blok (A - Z)</option>';
+
+            letters.forEach(letter => {
+                optionsHtmlWarga += `<option value="${letter}">Blok ${letter}</option>`;
+                optionsHtmlIuran += `<option value="${letter}">Blok ${letter}</option>`;
             });
 
-            filterWargaSelect.innerHTML = optionsHtml;
-            filterIuranSelect.innerHTML = optionsHtml.replace('Semua Blok Rumah', 'Semua Blok');
+            // Periksa jika ada data warga dengan blok non-alfabet (misal RT/RW atau nama jalan)
+            const hasNonAlphabet = wargaData.some(w => !letters.some(l => isMatchingBlockLetter(w.blok, l)));
+            if (hasNonAlphabet) {
+                optionsHtmlWarga += '<option value="LAINNYA">Lainnya / Non-Blok</option>';
+                optionsHtmlIuran += '<option value="LAINNYA">Lainnya / Non-Blok</option>';
+            }
 
-            filterWargaSelect.value = uniqueBlocks.includes(currentWargaVal) ? currentWargaVal : 'ALL';
-            filterIuranSelect.value = uniqueBlocks.includes(currentIuranVal) ? currentIuranVal : 'ALL';
+            const validValues = ['ALL', ...letters, 'LAINNYA'];
+
+            if (filterWargaSelect) {
+                filterWargaSelect.innerHTML = optionsHtmlWarga;
+                filterWargaSelect.value = validValues.includes(currentWargaVal) ? currentWargaVal : 'ALL';
+            }
+
+            if (filterIuranSelect) {
+                filterIuranSelect.innerHTML = optionsHtmlIuran;
+                filterIuranSelect.value = validValues.includes(currentIuranVal) ? currentIuranVal : 'ALL';
+            }
         }
 
         function renderDashboard() {
@@ -1947,7 +1986,7 @@
 
             const filtered = wargaData.filter(w => {
                 const matchSearch = w.nama.toLowerCase().includes(searchVal) || w.telp.includes(searchVal) || w.blok.toLowerCase().includes(searchVal);
-                const matchBlok = (filterBlok === 'ALL') || (w.blok === filterBlok);
+                const matchBlok = matchesBlockFilter(w.blok, filterBlok);
                 return matchSearch && matchBlok;
             });
 
@@ -2048,7 +2087,7 @@
             const filterBlok = filterElem ? filterElem.value : 'ALL';
             if (!iuranData[currentActiveYear]) iuranData[currentActiveYear] = {};
 
-            const filteredWarga = wargaData.filter(w => (filterBlok === 'ALL') || (w.blok === filterBlok));
+            const filteredWarga = wargaData.filter(w => matchesBlockFilter(w.blok, filterBlok));
 
             if (filteredWarga.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="14" class="px-4 py-8 text-center text-slate-400 text-xs">Tidak ada data warga untuk ceklis iuran.</td></tr>';
