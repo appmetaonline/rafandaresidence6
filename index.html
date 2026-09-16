@@ -822,6 +822,48 @@
         </div>
     </div>
 
+    <!-- MODAL POP-UP KONFIRMASI (HAPUS / TINDAKAN KRITIS) -->
+    <div id="modalConfirm" class="fixed inset-0 bg-slate-900/60 z-[70] flex items-center justify-center p-4 hidden backdrop-blur-[2px] transition-all">
+        <div id="confirmModalCard" class="bg-white rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-100 transform transition-all space-y-4">
+            <div class="flex items-start space-x-3.5">
+                <div id="confirmModalIconWrapper" class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-indigo-50 text-indigo-600 ring-4 ring-indigo-50/60">
+                    <i id="confirmModalIcon" class="fa-solid fa-circle-question text-lg"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 id="confirmModalTitle" class="font-bold text-slate-800 text-base leading-snug">Konfirmasi Tindakan</h3>
+                    <p id="confirmModalMessage" class="text-xs text-slate-500 mt-1 leading-relaxed">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+                </div>
+            </div>
+            
+            <div class="pt-2 flex items-center justify-end space-x-2 border-t border-slate-100">
+                <button type="button" id="confirmModalCancelBtn" onclick="closeConfirmModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+                    Batal
+                </button>
+                <button type="button" id="confirmModalConfirmBtn" onclick="executeConfirmAction()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/20 transition-all flex items-center space-x-1.5">
+                    <span id="confirmModalConfirmText">Ya, Lanjutkan</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL POP-UP SUKSES SIMPAN & EDIT ("data berhasil disimpan") -->
+    <div id="modalSuccess" class="fixed inset-0 bg-slate-900/60 z-[75] flex items-center justify-center p-4 hidden backdrop-blur-[2px] transition-all">
+        <div class="bg-white rounded-2xl max-w-xs sm:max-w-sm w-full p-6 shadow-2xl border border-emerald-100 text-center space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div class="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/60 shadow-inner">
+                <i class="fa-solid fa-circle-check text-2xl"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-slate-800 text-base">Berhasil</h3>
+                <p id="successModalMessage" class="text-sm font-semibold text-slate-700 mt-1">data berhasil disimpan</p>
+            </div>
+            <div class="pt-1">
+                <button type="button" onclick="closeSuccessModal()" class="w-full py-2.5 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/25 transition-all cursor-pointer flex items-center justify-center space-x-1.5">
+                    <span>OK</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL 1: TAMBAH / EDIT WARGA -->
     <div id="modalWarga" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
@@ -1160,6 +1202,142 @@
                 toast.classList.remove('translate-y-0', 'opacity-100');
                 toast.classList.add('translate-y-24', 'opacity-0');
             }, 3500);
+        }
+
+        // ==========================================
+        // POP-UP DIALOG KONFIRMASI GLOBAL (SIMPAN, EDIT, HAPUS)
+        // ==========================================
+        let activeConfirmCallback = null;
+
+        function showConfirmationModal({
+            title = 'Konfirmasi Tindakan',
+            message = 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
+            confirmText = 'Ya, Lanjutkan',
+            cancelText = 'Batal',
+            type = 'primary', // 'primary' | 'success' | 'danger' | 'warning'
+            icon = null,
+            onConfirm = null
+        }) {
+            const modal = document.getElementById('modalConfirm');
+            const titleElem = document.getElementById('confirmModalTitle');
+            const msgElem = document.getElementById('confirmModalMessage');
+            const iconWrapper = document.getElementById('confirmModalIconWrapper');
+            const iconElem = document.getElementById('confirmModalIcon');
+            const cancelBtn = document.getElementById('confirmModalCancelBtn');
+            const confirmBtn = document.getElementById('confirmModalConfirmBtn');
+            const confirmTextElem = document.getElementById('confirmModalConfirmText');
+
+            if (!modal) return;
+
+            activeConfirmCallback = onConfirm;
+
+            if (titleElem) titleElem.textContent = title;
+            if (msgElem) msgElem.textContent = message;
+            if (cancelBtn) cancelBtn.textContent = cancelText;
+            if (confirmTextElem) confirmTextElem.textContent = confirmText;
+
+            let iconClass = icon;
+            if (!iconClass) {
+                if (type === 'danger') iconClass = 'fa-solid fa-trash-can';
+                else if (type === 'success') iconClass = 'fa-solid fa-floppy-disk';
+                else if (type === 'warning') iconClass = 'fa-solid fa-triangle-exclamation';
+                else iconClass = 'fa-solid fa-pen-to-square';
+            }
+            if (iconElem) iconElem.className = iconClass + ' text-lg';
+
+            if (type === 'danger') {
+                if (iconWrapper) iconWrapper.className = 'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-rose-50 text-rose-600 ring-4 ring-rose-50/60';
+                if (confirmBtn) confirmBtn.className = 'px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 transition-all flex items-center space-x-1.5 cursor-pointer';
+            } else if (type === 'success') {
+                if (iconWrapper) iconWrapper.className = 'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-50 text-emerald-600 ring-4 ring-emerald-50/60';
+                if (confirmBtn) confirmBtn.className = 'px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-all flex items-center space-x-1.5 cursor-pointer';
+            } else if (type === 'warning') {
+                if (iconWrapper) iconWrapper.className = 'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-amber-50 text-amber-600 ring-4 ring-amber-50/60';
+                if (confirmBtn) confirmBtn.className = 'px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-600/20 transition-all flex items-center space-x-1.5 cursor-pointer';
+            } else {
+                if (iconWrapper) iconWrapper.className = 'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-indigo-50 text-indigo-600 ring-4 ring-indigo-50/60';
+                if (confirmBtn) confirmBtn.className = 'px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/20 transition-all flex items-center space-x-1.5 cursor-pointer';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            const modal = document.getElementById('modalConfirm');
+            if (modal) modal.classList.add('hidden');
+            activeConfirmCallback = null;
+        }
+
+        // ==========================================
+        // POP-UP DIALOG SUKSES SIMPAN & EDIT
+        // ==========================================
+        let successModalTimer = null;
+
+        function showSuccessModal(message = 'data berhasil disimpan') {
+            const modal = document.getElementById('modalSuccess');
+            const msgElem = document.getElementById('successModalMessage');
+            if (msgElem) msgElem.textContent = message;
+            if (modal) modal.classList.remove('hidden');
+
+            // Tampilkan juga toast notifikasi sebagai feedback instan
+            showToastNotification(message, 'success');
+
+            // Auto tutup setelah 3 detik jika tidak diklik
+            if (successModalTimer) clearTimeout(successModalTimer);
+            successModalTimer = setTimeout(() => {
+                closeSuccessModal();
+            }, 3000);
+        }
+
+        function closeSuccessModal() {
+            if (successModalTimer) {
+                clearTimeout(successModalTimer);
+                successModalTimer = null;
+            }
+            const modal = document.getElementById('modalSuccess');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        // Tutup popup jika user klik di luar kotak modal atau tekan ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' || e.key === 'Enter') {
+                const modalSuccess = document.getElementById('modalSuccess');
+                if (modalSuccess && !modalSuccess.classList.contains('hidden')) {
+                    closeSuccessModal();
+                    return;
+                }
+                const modal = document.getElementById('modalConfirm');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeConfirmModal();
+                }
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('modalConfirm');
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        closeConfirmModal();
+                    }
+                });
+            }
+            const modalSuccess = document.getElementById('modalSuccess');
+            if (modalSuccess) {
+                modalSuccess.addEventListener('click', (e) => {
+                    if (e.target === modalSuccess) {
+                        closeSuccessModal();
+                    }
+                });
+            }
+        });
+
+        function executeConfirmAction() {
+            const callback = activeConfirmCallback;
+            closeConfirmModal();
+            if (typeof callback === 'function') {
+                callback();
+            }
         }
 
         function goToSupabaseTab() {
@@ -2052,6 +2230,11 @@
             const anggota = parseInt(document.getElementById('wargaAnggota').value, 10);
             const telp = document.getElementById('wargaTelp').value.trim();
 
+            if (!nama || !blok) {
+                showToastNotification('Harap lengkapi nama dan blok rumah warga.', 'warning');
+                return;
+            }
+
             if (id) {
                 const index = wargaData.findIndex(w => w.id === id);
                 if (index !== -1) wargaData[index] = { id, nama, blok, status, anggota, telp };
@@ -2066,17 +2249,45 @@
             renderWargaTable();
             renderIuranTable();
             renderDashboard();
+
+            // Tampilkan pop-up dialog dengan format kalimat "data berhasil disimpan"
+            showSuccessModal('data berhasil disimpan');
         }
 
-        function editWarga(id) { openModalWarga(id); }
+        function editWarga(id) {
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Hanya user admin yang dapat mengedit data warga.', 'warning');
+                return;
+            }
+            openModalWarga(id);
+        }
 
         function deleteWarga(id) {
-            wargaData = wargaData.filter(w => w.id !== id);
-            saveLocalStorageData();
-            updateBlockFilterOptions();
-            renderWargaTable();
-            renderIuranTable();
-            renderDashboard();
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Hanya user admin yang dapat menghapus data warga.', 'warning');
+                return;
+            }
+            const w = wargaData.find(item => item.id === id);
+            const namaWarga = w ? `"${w.nama}" (${w.blok})` : 'data warga ini';
+            showConfirmationModal({
+                title: 'Konfirmasi Hapus Data Warga',
+                message: `Apakah Anda yakin ingin menghapus ${namaWarga}? Tindakan ini tidak dapat dibatalkan.`,
+                confirmText: 'Ya, Hapus Warga',
+                cancelText: 'Batal',
+                type: 'danger',
+                icon: 'fa-solid fa-trash-can',
+                onConfirm: () => {
+                    wargaData = wargaData.filter(w => w.id !== id);
+                    saveLocalStorageData();
+                    updateBlockFilterOptions();
+                    renderWargaTable();
+                    renderIuranTable();
+                    renderDashboard();
+                    showToastNotification('Data warga berhasil dihapus.', 'success');
+                }
+            });
         }
 
         function renderIuranTable() {
@@ -2127,12 +2338,19 @@
         }
 
         function toggleIuranStatus(wargaId, monthIdx) {
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Hanya admin yang dapat mengubah status iuran.', 'warning');
+                return;
+            }
             if (!iuranData[currentActiveYear]) iuranData[currentActiveYear] = {};
             if (!iuranData[currentActiveYear][wargaId]) iuranData[currentActiveYear][wargaId] = Array(12).fill(false);
 
             iuranData[currentActiveYear][wargaId][monthIdx] = !iuranData[currentActiveYear][wargaId][monthIdx];
             saveLocalStorageData();
             renderIuranTable();
+            renderDashboard();
+            showSuccessModal('data berhasil disimpan');
         }
 
         function renderKasTable() {
@@ -2208,6 +2426,11 @@
             const nominal = parseFloat(document.getElementById('kasNominal').value);
             const keterangan = document.getElementById('kasKeterangan').value.trim();
 
+            if (!nominal || isNaN(nominal) || nominal <= 0) {
+                showToastNotification('Nominal kas tidak valid.', 'warning');
+                return;
+            }
+
             const dateObj = new Date(tanggal);
             const tahun = dateObj.getFullYear();
             const bulan = dateObj.getMonth() + 1;
@@ -2224,15 +2447,43 @@
             saveLocalStorageData();
             renderKasTable();
             renderDashboard();
+
+            // Tampilkan pop-up dialog dengan format kalimat "data berhasil disimpan"
+            showSuccessModal('data berhasil disimpan');
         }
 
-        function editKas(id) { openModalKas(id); }
+        function editKas(id) {
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Hanya user admin yang dapat mengedit transaksi kas.', 'warning');
+                return;
+            }
+            openModalKas(id);
+        }
 
         function deleteKas(id) {
-            kasData = kasData.filter(k => k.id !== id);
-            saveLocalStorageData();
-            renderKasTable();
-            renderDashboard();
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Hanya user admin yang dapat menghapus transaksi kas.', 'warning');
+                return;
+            }
+            const k = kasData.find(item => item.id === id);
+            const info = k ? `"${k.keterangan || k.kategori}" senilai Rp ${Number(k.nominal).toLocaleString('id-ID')}` : 'transaksi kas ini';
+            showConfirmationModal({
+                title: 'Konfirmasi Hapus Transaksi Kas',
+                message: `Apakah Anda yakin ingin menghapus catatan transaksi ${info}? Tindakan ini tidak dapat dibatalkan.`,
+                confirmText: 'Ya, Hapus Transaksi',
+                cancelText: 'Batal',
+                type: 'danger',
+                icon: 'fa-solid fa-trash-can',
+                onConfirm: () => {
+                    kasData = kasData.filter(k => k.id !== id);
+                    saveLocalStorageData();
+                    renderKasTable();
+                    renderDashboard();
+                    showToastNotification('Catatan transaksi kas berhasil dihapus.', 'success');
+                }
+            });
         }
 
         function renderPengumumanGrid() {
@@ -2306,20 +2557,26 @@
             const tanggal = document.getElementById('pengTanggal').value;
             const isi = document.getElementById('pengIsi').value.trim();
 
+            if (!judul || !isi) {
+                showToastNotification('Harap lengkapi judul dan isi pengumuman.', 'warning');
+                return;
+            }
+
             if (id) {
                 const index = pengumumanData.findIndex(p => p.id === id);
                 if (index !== -1) pengumumanData[index] = { id, judul, kategori, tanggal, isi };
-                showToastNotification('Pengumuman berhasil diperbarui.', 'success');
             } else {
                 const newId = 'P-' + Date.now();
                 pengumumanData.unshift({ id: newId, judul, kategori, tanggal, isi });
-                showToastNotification('Pengumuman baru berhasil diterbitkan.', 'success');
             }
 
             closeModalPengumuman();
             saveLocalStorageData();
             renderPengumumanGrid();
             renderDashboard();
+
+            // Tampilkan pop-up dialog dengan format kalimat "data berhasil disimpan"
+            showSuccessModal('data berhasil disimpan');
         }
 
         function editPengumuman(id) { 
@@ -2337,12 +2594,23 @@
                 showToastNotification('Hanya user admin yang dapat menghapus pengumuman.', 'warning');
                 return;
             }
-            if (!confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) return;
-            pengumumanData = pengumumanData.filter(p => p.id !== id);
-            saveLocalStorageData();
-            renderPengumumanGrid();
-            renderDashboard();
-            showToastNotification('Pengumuman berhasil dihapus.', 'success');
+            const p = pengumumanData.find(item => item.id === id);
+            const judul = p ? `"${p.judul}"` : 'pengumuman ini';
+            showConfirmationModal({
+                title: 'Konfirmasi Hapus Pengumuman',
+                message: `Apakah Anda yakin ingin menghapus pengumuman ${judul}? Tindakan ini tidak dapat dibatalkan.`,
+                confirmText: 'Ya, Hapus Pengumuman',
+                cancelText: 'Batal',
+                type: 'danger',
+                icon: 'fa-solid fa-trash-can',
+                onConfirm: () => {
+                    pengumumanData = pengumumanData.filter(item => item.id !== id);
+                    saveLocalStorageData();
+                    renderPengumumanGrid();
+                    renderDashboard();
+                    showToastNotification('Pengumuman berhasil dihapus.', 'success');
+                }
+            });
         }
 
         function renderKontakGrid() {
@@ -2424,19 +2692,25 @@
             const nomor = document.getElementById('kontakNomor').value.trim();
             const kategori = document.getElementById('kontakKategori').value;
 
+            if (!nama || !nomor) {
+                showToastNotification('Harap lengkapi nama dan nomor kontak darurat.', 'warning');
+                return;
+            }
+
             if (id) {
                 const index = kontakData.findIndex(k => k.id === id);
                 if (index !== -1) kontakData[index] = { id, nama, nomor, kategori };
-                showToastNotification('Kontak darurat berhasil diperbarui.', 'success');
             } else {
                 const newId = 'KT-' + Date.now();
                 kontakData.push({ id: newId, nama, nomor, kategori });
-                showToastNotification('Kontak darurat berhasil ditambahkan.', 'success');
             }
 
             closeModalKontak();
             saveLocalStorageData();
             renderKontakGrid();
+
+            // Tampilkan pop-up dialog dengan format kalimat "data berhasil disimpan"
+            showSuccessModal('data berhasil disimpan');
         }
 
         function editKontak(id) { 
@@ -2454,11 +2728,22 @@
                 showToastNotification('Hanya user admin yang dapat menghapus kontak darurat.', 'warning');
                 return;
             }
-            if (!confirm('Apakah Anda yakin ingin menghapus kontak darurat ini?')) return;
-            kontakData = kontakData.filter(k => k.id !== id);
-            saveLocalStorageData();
-            renderKontakGrid();
-            showToastNotification('Kontak darurat berhasil dihapus.', 'success');
+            const k = kontakData.find(item => item.id === id);
+            const nama = k ? `"${k.nama}" (${k.nomor})` : 'kontak darurat ini';
+            showConfirmationModal({
+                title: 'Konfirmasi Hapus Kontak Darurat',
+                message: `Apakah Anda yakin ingin menghapus kontak darurat ${nama}? Tindakan ini tidak dapat dibatalkan.`,
+                confirmText: 'Ya, Hapus Kontak',
+                cancelText: 'Batal',
+                type: 'danger',
+                icon: 'fa-solid fa-trash-can',
+                onConfirm: () => {
+                    kontakData = kontakData.filter(item => item.id !== id);
+                    saveLocalStorageData();
+                    renderKontakGrid();
+                    showToastNotification('Kontak darurat berhasil dihapus.', 'success');
+                }
+            });
         }
 
         function switchConfigSubTab(subId) {
@@ -2484,13 +2769,20 @@
 
         function saveComplexProfile(e) {
             e.preventDefault();
-            systemConfig.namaKomplek = document.getElementById('cfgNamaKomplek').value.trim();
-            systemConfig.alamatKomplek = document.getElementById('cfgAlamatKomplek').value.trim();
-            systemConfig.nominalIuranDefault = parseFloat(document.getElementById('cfgNominalIuran').value) || 0;
+            const namaKomplek = document.getElementById('cfgNamaKomplek').value.trim();
+            const alamatKomplek = document.getElementById('cfgAlamatKomplek').value.trim();
+            const nominalIuranDefault = parseFloat(document.getElementById('cfgNominalIuran').value) || 0;
+
+            systemConfig.namaKomplek = namaKomplek;
+            systemConfig.alamatKomplek = alamatKomplek;
+            systemConfig.nominalIuranDefault = nominalIuranDefault;
 
             saveLocalStorageData();
             updateAppIdentityUI();
             navigateTo('/dashboard');
+
+            // Tampilkan pop-up dialog dengan format kalimat "data berhasil disimpan"
+            showSuccessModal('data berhasil disimpan');
         }
 
         function renderAdminUsersTable() {
@@ -2537,6 +2829,7 @@
             const role = document.getElementById('adminNewRole').value;
 
             if (adminUsers.some(a => a.username.toLowerCase() === username.toLowerCase())) {
+                showToastNotification('Username sudah digunakan, gunakan username lain.', 'error');
                 return;
             }
 
@@ -2544,12 +2837,28 @@
             saveLocalStorageData();
             closeModalAddAdmin();
             renderAdminUsersTable();
+
+            // Tampilkan pop-up dialog dengan format kalimat "data berhasil disimpan"
+            showSuccessModal('data berhasil disimpan');
         }
 
         function deleteAdminUser(username) {
-            adminUsers = adminUsers.filter(a => a.username !== username);
-            saveLocalStorageData();
-            renderAdminUsersTable();
+            const target = adminUsers.find(a => a.username === username);
+            const nama = target ? `${target.name} (@${username})` : `@${username}`;
+            showConfirmationModal({
+                title: 'Konfirmasi Hapus Akun Admin',
+                message: `Apakah Anda yakin ingin menghapus akun admin ${nama}? Tindakan ini tidak dapat dibatalkan.`,
+                confirmText: 'Ya, Hapus Akun',
+                cancelText: 'Batal',
+                type: 'danger',
+                icon: 'fa-solid fa-user-xmark',
+                onConfirm: () => {
+                    adminUsers = adminUsers.filter(a => a.username !== username);
+                    saveLocalStorageData();
+                    renderAdminUsersTable();
+                    showToastNotification(`Akun admin @${username} berhasil dihapus.`, 'success');
+                }
+            });
         }
 
         function changeMyPassword(e) {
@@ -2561,10 +2870,12 @@
             const confirmPass = document.getElementById('passConfirm').value.trim();
 
             if (oldPass !== activeAdminSession.password) {
+                showToastNotification('Kata sandi lama Anda tidak sesuai.', 'error');
                 return;
             }
 
             if (newPass !== confirmPass) {
+                showToastNotification('Konfirmasi kata sandi baru tidak cocok.', 'error');
                 return;
             }
 
@@ -2577,6 +2888,9 @@
                 document.getElementById('passOld').value = '';
                 document.getElementById('passNew').value = '';
                 document.getElementById('passConfirm').value = '';
+                
+                // Tampilkan pop-up dialog dengan format kalimat "data berhasil disimpan"
+                showSuccessModal('data berhasil disimpan');
             }
         }
 
@@ -2628,8 +2942,18 @@
         }
 
         function resetSystemToDefault() {
-            localStorage.clear();
-            location.reload();
+            showConfirmationModal({
+                title: 'Konfirmasi Reset Total Data',
+                message: 'PERINGATAN: Semua data warga, iuran, kas, kontak, pengumuman, dan admin akan direset ke pengaturan awal pabrik. Tindakan ini tidak dapat dibatalkan. Lanjutkan?',
+                confirmText: 'Ya, Reset Semua Data',
+                cancelText: 'Batal',
+                type: 'danger',
+                icon: 'fa-solid fa-triangle-exclamation',
+                onConfirm: () => {
+                    localStorage.clear();
+                    location.reload();
+                }
+            });
         }
     </script>
 </body>
