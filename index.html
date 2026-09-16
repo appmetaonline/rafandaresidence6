@@ -187,8 +187,8 @@
                 <h2 id="pageTitle" class="text-lg md:text-xl font-bold text-slate-800 tracking-tight">Dashboard</h2>
             </div>
             <div class="flex items-center space-x-2 sm:space-x-3">
-                <!-- Supabase Cloud Badge -->
-                <button id="supabaseStatusBadge" onclick="goToSupabaseTab()" title="Status Supabase Cloud Database (Klik untuk mengelola)" class="cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 shadow-2xs">
+                <!-- Supabase Cloud Badge (Hanya muncul untuk Admin) -->
+                <button id="supabaseStatusBadge" onclick="goToSupabaseTab()" title="Status Supabase Cloud Database (Klik untuk mengelola)" class="admin-only hidden cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 shadow-2xs">
                     <span id="supabaseBadgeDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="hidden sm:inline font-semibold">Supabase</span>
                     <span id="supabaseBadgeText" class="text-[11px] font-medium">Terhubung</span>
@@ -267,13 +267,10 @@
                     <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                             <div>
-                                <div class="flex items-center gap-2">
+                                <div>
                                     <h3 class="font-bold text-slate-800">Grafik Arus Kas Bulanan</h3>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-sky-500 mr-1 animate-pulse"></span> Dinamis
-                                    </span>
+                                    <p class="text-xs text-slate-500 mt-0.5">Perbandingan pemasukan & pengeluaran bulanan</p>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-0.5">Perbandingan pemasukan & pengeluaran bulanan dengan animasi bar dinamis</p>
                             </div>
                             <div class="flex items-center space-x-2">
                                 <div class="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-medium border border-slate-200">
@@ -281,10 +278,6 @@
                                     <button onclick="setChartFilter('masuk')" id="btnChartFilterMasuk" class="px-2.5 py-1 rounded-lg transition-all text-slate-600 hover:text-sky-600">Pemasukan</button>
                                     <button onclick="setChartFilter('keluar')" id="btnChartFilterKeluar" class="px-2.5 py-1 rounded-lg transition-all text-slate-600 hover:text-rose-600">Pengeluaran</button>
                                 </div>
-                                <button onclick="renderDashboardChart(true)" title="Putar ulang animasi bar" class="p-1.5 px-2.5 text-xs text-slate-600 hover:text-sky-600 bg-slate-50 hover:bg-sky-50 border border-slate-200 rounded-xl transition-all flex items-center gap-1.5 active:scale-95">
-                                    <i class="fa-solid fa-arrows-rotate text-xs"></i>
-                                    <span class="hidden sm:inline">Animasi</span>
-                                </button>
                             </div>
                         </div>
                         <div class="relative flex-1 min-h-[280px] w-full">
@@ -460,7 +453,7 @@
                         <h3 class="font-bold text-slate-800 text-lg">Papan Pengumuman Warga</h3>
                         <p class="text-xs text-slate-500">Informasi kegiatan, kerja bakti, dan pemberitahuan umum komplek</p>
                     </div>
-                    <button onclick="openModalPengumuman()" class="bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-rose-600/20 flex items-center justify-center space-x-2 transition-all">
+                    <button onclick="openModalPengumuman()" class="admin-only hidden bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-rose-600/20 flex items-center justify-center space-x-2 transition-all">
                         <i class="fa-solid fa-bullhorn text-xs"></i>
                         <span>Buat Pengumuman Baru</span>
                     </button>
@@ -474,10 +467,10 @@
             <section id="tab-kontak" class="tab-content hidden space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                        <h3 class="font-bold text-slate-800 text-lg">Direktori Kontak Darurat</h3>
+                        <h3 class="font-bold text-slate-800 text-lg">Kontak Darurat</h3>
                         <p class="text-xs text-slate-500">Daftar kontak instansi penting & pengurus yang siap dihubungi kapan saja</p>
                     </div>
-                    <button onclick="openModalKontak()" class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-teal-600/20 flex items-center justify-center space-x-2 transition-all">
+                    <button onclick="openModalKontak()" class="admin-only hidden bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-teal-600/20 flex items-center justify-center space-x-2 transition-all">
                         <i class="fa-solid fa-plus text-xs"></i>
                         <span>Tambah Kontak Darurat</span>
                     </button>
@@ -1205,9 +1198,11 @@
                     if (sqlPreview) sqlPreview.textContent = data.sqlScript;
                 }
 
+                const adminBadgeVisibility = 'admin-only ' + (activeAdminSession ? '' : 'hidden ');
+
                 if (data.connected) {
                     if (data.tablesReady) {
-                        if (badge) badge.className = 'cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 shadow-2xs';
+                        if (badge) badge.className = adminBadgeVisibility + 'cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 shadow-2xs';
                         if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
                         if (badgeText) badgeText.textContent = 'Terhubung';
                         if (miniTag) {
@@ -1226,7 +1221,7 @@
                         if (bannerMsg) bannerMsg.textContent = 'Koneksi database Supabase aktif dan tabel telah terkonfigurasi dengan baik. Data otomatis tersinkron.';
                         if (manual) showToastNotification('Supabase terhubung dan tabel siap digunakan!', 'success');
                     } else {
-                        if (badge) badge.className = 'cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 shadow-2xs';
+                        if (badge) badge.className = adminBadgeVisibility + 'cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 shadow-2xs';
                         if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
                         if (badgeText) badgeText.textContent = 'Perlu Setup SQL';
                         if (miniTag) {
@@ -1252,7 +1247,8 @@
                 }
             } catch (err) {
                 console.warn('Error checking Supabase:', err);
-                if (badge) badge.className = 'cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 shadow-2xs';
+                const adminBadgeVisibility = 'admin-only ' + (activeAdminSession ? '' : 'hidden ');
+                if (badge) badge.className = adminBadgeVisibility + 'cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 shadow-2xs';
                 if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-rose-500';
                 if (badgeText) badgeText.textContent = 'Terputus';
                 if (miniTag) {
@@ -1654,7 +1650,7 @@
                     'iuran': 'Ceklis Pembayaran Iuran Kas Bulanan',
                     'kas': 'Pencatatan Pemasukan & Pengeluaran Kas',
                     'pengumuman': 'Papan Pengumuman Komplek',
-                    'kontak': 'Direktori Kontak Darurat',
+                    'kontak': 'Kontak Darurat',
                     'config': 'Konfigurasi & Pengaturan Admin'
                 };
                 const pTitle = document.getElementById('pageTitle');
@@ -1822,7 +1818,7 @@
                     borderRadius: { topLeft: 8, topRight: 8, bottomLeft: 2, bottomRight: 2 },
                     borderSkipped: false,
                     barPercentage: 0.75,
-                    categoryPercentage: 0.7
+                    categoryPercentage: 0.82
                 });
             }
 
@@ -1837,7 +1833,7 @@
                     borderRadius: { topLeft: 8, topRight: 8, bottomLeft: 2, bottomRight: 2 },
                     borderSkipped: false,
                     barPercentage: 0.75,
-                    categoryPercentage: 0.7
+                    categoryPercentage: 0.82
                 });
             }
 
@@ -1876,26 +1872,22 @@
                             position: 'top',
                             align: 'end',
                             labels: {
+                                boxWidth: 12,
+                                boxHeight: 12,
+                                useBorderRadius: true,
+                                borderRadius: 4,
                                 font: { family: 'Inter', size: 11, weight: '500' },
-                                usePointStyle: true,
-                                pointStyle: 'circle',
-                                padding: 15
+                                color: '#475569',
+                                padding: 16
                             }
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(15, 23, 42, 0.94)',
-                            titleFont: { family: 'Inter', size: 12, weight: 'bold' },
-                            bodyFont: { family: 'Inter', size: 11 },
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
                             padding: 12,
-                            cornerRadius: 10,
-                            boxPadding: 6,
-                            usePointStyle: true,
+                            borderRadius: 12,
+                            titleFont: { family: 'Inter', size: 12, weight: '700' },
+                            bodyFont: { family: 'Inter', size: 11 },
                             callbacks: {
-                                title: function(items) {
-                                    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                                    const idx = items[0].dataIndex;
-                                    return `${months[idx]} ${currentActiveYear}`;
-                                },
                                 label: function(context) {
                                     const val = context.parsed.y || 0;
                                     return ` ${context.dataset.label}: Rp ${val.toLocaleString('id-ID')}`;
@@ -1922,11 +1914,11 @@
                             },
                             ticks: {
                                 font: { family: 'Inter', size: 10 },
-                                color: '#64748b',
+                                color: '#94a3b8',
                                 callback: function(val) {
-                                    if (val >= 1000000) return (val / 1000000) + ' Jt';
-                                    if (val >= 1000) return (val / 1000) + ' Rb';
-                                    return val;
+                                    if (val >= 1000000) return 'Rp ' + (val / 1000000).toFixed(1).replace(/\.0$/, '') + ' jt';
+                                    if (val >= 1000) return 'Rp ' + (val / 1000).toFixed(0) + ' rb';
+                                    return 'Rp ' + val;
                                 }
                             }
                         },
@@ -2213,6 +2205,7 @@
                 return;
             }
 
+            const isLoggedIn = activeAdminSession !== null;
             grid.innerHTML = pengumumanData.map(p => `
                 <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
                     <div class="space-y-2">
@@ -2223,15 +2216,23 @@
                         <h4 class="font-bold text-slate-800 text-base leading-snug">${p.judul}</h4>
                         <p class="text-xs text-slate-600 leading-relaxed whitespace-pre-line">${p.isi}</p>
                     </div>
-                    <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
-                        <button onclick="editPengumuman('${p.id}')" class="text-xs text-indigo-600 font-semibold px-2.5 py-1 rounded-lg hover:bg-indigo-50"><i class="fa-solid fa-pen mr-1"></i> Edit</button>
-                        <button onclick="deletePengumuman('${p.id}')" class="text-xs text-rose-600 font-semibold px-2.5 py-1 rounded-lg hover:bg-rose-50"><i class="fa-solid fa-trash mr-1"></i> Hapus</button>
+                    ${isLoggedIn ? `
+                    <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2 admin-only">
+                        <button onclick="editPengumuman('${p.id}')" class="text-xs text-indigo-600 font-semibold px-2.5 py-1 rounded-lg hover:bg-indigo-50 transition-colors"><i class="fa-solid fa-pen mr-1"></i> Edit</button>
+                        <button onclick="deletePengumuman('${p.id}')" class="text-xs text-rose-600 font-semibold px-2.5 py-1 rounded-lg hover:bg-rose-50 transition-colors"><i class="fa-solid fa-trash mr-1"></i> Hapus</button>
                     </div>
+                    ` : ''}
                 </div>
             `).join('');
         }
 
         function openModalPengumuman(id = null) {
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Fitur tambah/edit pengumuman hanya dapat diakses oleh user admin.', 'warning');
+                return;
+            }
+
             document.getElementById('formPengumuman').reset();
             document.getElementById('pengumumanId').value = '';
             document.getElementById('modalPengumumanTitle').textContent = id ? 'Edit Pengumuman' : 'Buat Pengumuman Baru';
@@ -2254,6 +2255,12 @@
 
         function savePengumuman(e) {
             e.preventDefault();
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Aksi ditolak: Hanya user admin yang dapat menyimpan pengumuman.', 'error');
+                return;
+            }
+
             const id = document.getElementById('pengumumanId').value;
             const judul = document.getElementById('pengJudul').value.trim();
             const kategori = document.getElementById('pengKategori').value;
@@ -2263,9 +2270,11 @@
             if (id) {
                 const index = pengumumanData.findIndex(p => p.id === id);
                 if (index !== -1) pengumumanData[index] = { id, judul, kategori, tanggal, isi };
+                showToastNotification('Pengumuman berhasil diperbarui.', 'success');
             } else {
                 const newId = 'P-' + Date.now();
                 pengumumanData.unshift({ id: newId, judul, kategori, tanggal, isi });
+                showToastNotification('Pengumuman baru berhasil diterbitkan.', 'success');
             }
 
             closeModalPengumuman();
@@ -2274,13 +2283,27 @@
             renderDashboard();
         }
 
-        function editPengumuman(id) { openModalPengumuman(id); }
+        function editPengumuman(id) { 
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Hanya user admin yang dapat mengedit pengumuman.', 'warning');
+                return;
+            }
+            openModalPengumuman(id); 
+        }
 
         function deletePengumuman(id) {
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Hanya user admin yang dapat menghapus pengumuman.', 'warning');
+                return;
+            }
+            if (!confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) return;
             pengumumanData = pengumumanData.filter(p => p.id !== id);
             saveLocalStorageData();
             renderPengumumanGrid();
             renderDashboard();
+            showToastNotification('Pengumuman berhasil dihapus.', 'success');
         }
 
         function renderKontakGrid() {
@@ -2300,6 +2323,7 @@
                 'Lainnya': 'fa-phone text-slate-500 bg-slate-50'
             };
 
+            const isLoggedIn = activeAdminSession !== null;
             grid.innerHTML = kontakData.map(k => `
                 <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between space-x-3 hover:shadow-md transition-shadow">
                     <div class="flex items-center space-x-3 min-w-0">
@@ -2312,16 +2336,24 @@
                             <p class="text-xs font-semibold text-teal-600 mt-0.5">${k.nomor}</p>
                         </div>
                     </div>
-                    <div class="flex flex-col space-y-1">
-                        <a href="tel:${k.nomor}" class="p-2 bg-teal-50 text-teal-600 hover:bg-teal-100 rounded-xl text-center"><i class="fa-solid fa-phone"></i></a>
-                        <button onclick="editKontak('${k.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600 text-xs"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="deleteKontak('${k.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 text-xs"><i class="fa-solid fa-trash"></i></button>
+                    <div class="flex items-center space-x-1">
+                        <a href="tel:${k.nomor}" title="Hubungi ${k.nama}" class="p-2 bg-teal-50 text-teal-600 hover:bg-teal-100 rounded-xl transition-colors text-center"><i class="fa-solid fa-phone"></i></a>
+                        ${isLoggedIn ? `
+                        <button onclick="editKontak('${k.id}')" title="Edit Kontak" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl text-xs transition-colors admin-only"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteKontak('${k.id}')" title="Hapus Kontak" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl text-xs transition-colors admin-only"><i class="fa-solid fa-trash"></i></button>
+                        ` : ''}
                     </div>
                 </div>
             `).join('');
         }
 
         function openModalKontak(id = null) {
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Fitur tambah/edit kontak darurat hanya dapat diakses oleh user admin.', 'warning');
+                return;
+            }
+
             document.getElementById('formKontak').reset();
             document.getElementById('kontakId').value = '';
             document.getElementById('modalKontakTitle').textContent = id ? 'Edit Kontak Darurat' : 'Tambah Kontak Darurat';
@@ -2342,6 +2374,12 @@
 
         function saveKontak(e) {
             e.preventDefault();
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Aksi ditolak: Hanya user admin yang dapat menyimpan kontak darurat.', 'error');
+                return;
+            }
+
             const id = document.getElementById('kontakId').value;
             const nama = document.getElementById('kontakNama').value.trim();
             const nomor = document.getElementById('kontakNomor').value.trim();
@@ -2350,9 +2388,11 @@
             if (id) {
                 const index = kontakData.findIndex(k => k.id === id);
                 if (index !== -1) kontakData[index] = { id, nama, nomor, kategori };
+                showToastNotification('Kontak darurat berhasil diperbarui.', 'success');
             } else {
                 const newId = 'KT-' + Date.now();
                 kontakData.push({ id: newId, nama, nomor, kategori });
+                showToastNotification('Kontak darurat berhasil ditambahkan.', 'success');
             }
 
             closeModalKontak();
@@ -2360,12 +2400,26 @@
             renderKontakGrid();
         }
 
-        function editKontak(id) { openModalKontak(id); }
+        function editKontak(id) { 
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Hanya user admin yang dapat mengedit kontak darurat.', 'warning');
+                return;
+            }
+            openModalKontak(id); 
+        }
 
         function deleteKontak(id) {
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Hanya user admin yang dapat menghapus kontak darurat.', 'warning');
+                return;
+            }
+            if (!confirm('Apakah Anda yakin ingin menghapus kontak darurat ini?')) return;
             kontakData = kontakData.filter(k => k.id !== id);
             saveLocalStorageData();
             renderKontakGrid();
+            showToastNotification('Kontak darurat berhasil dihapus.', 'success');
         }
 
         function switchConfigSubTab(subId) {
