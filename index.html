@@ -186,7 +186,13 @@
                 </button>
                 <h2 id="pageTitle" class="text-lg md:text-xl font-bold text-slate-800 tracking-tight">Dashboard</h2>
             </div>
-            <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <!-- Supabase Cloud Badge -->
+                <button id="supabaseStatusBadge" onclick="goToSupabaseTab()" title="Status Supabase Cloud Database (Klik untuk mengelola)" class="cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 shadow-2xs">
+                    <span id="supabaseBadgeDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="hidden sm:inline font-semibold">Supabase</span>
+                    <span id="supabaseBadgeText" class="text-[11px] font-medium">Terhubung</span>
+                </button>
                 <span id="headerYearBadge" class="bg-sky-50 text-sky-700 text-xs font-semibold px-3 py-1 rounded-full border border-sky-200">
                     Tahun 2026
                 </span>
@@ -259,14 +265,29 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Chart Column -->
                     <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col">
-                        <div class="flex items-center justify-between mb-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                             <div>
-                                <h3 class="font-bold text-slate-800">Grafik Arus Kas Bulanan</h3>
-                                <p class="text-xs text-slate-500">Perbandingan pemasukan & pengeluaran bulanan</p>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="font-bold text-slate-800">Grafik Arus Kas Bulanan</h3>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-sky-500 mr-1 animate-pulse"></span> Dinamis
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">Perbandingan pemasukan & pengeluaran bulanan dengan animasi bar dinamis</p>
                             </div>
-                            <span class="text-xs font-medium bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">Grafik 12 Bulan</span>
+                            <div class="flex items-center space-x-2">
+                                <div class="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-medium border border-slate-200">
+                                    <button onclick="setChartFilter('all')" id="btnChartFilterAll" class="px-2.5 py-1 rounded-lg transition-all font-semibold bg-white text-slate-800 shadow-xs">Semua</button>
+                                    <button onclick="setChartFilter('masuk')" id="btnChartFilterMasuk" class="px-2.5 py-1 rounded-lg transition-all text-slate-600 hover:text-sky-600">Pemasukan</button>
+                                    <button onclick="setChartFilter('keluar')" id="btnChartFilterKeluar" class="px-2.5 py-1 rounded-lg transition-all text-slate-600 hover:text-rose-600">Pengeluaran</button>
+                                </div>
+                                <button onclick="renderDashboardChart(true)" title="Putar ulang animasi bar" class="p-1.5 px-2.5 text-xs text-slate-600 hover:text-sky-600 bg-slate-50 hover:bg-sky-50 border border-slate-200 rounded-xl transition-all flex items-center gap-1.5 active:scale-95">
+                                    <i class="fa-solid fa-arrows-rotate text-xs"></i>
+                                    <span class="hidden sm:inline">Animasi</span>
+                                </button>
+                            </div>
                         </div>
-                        <div class="relative flex-1 min-h-[260px] w-full">
+                        <div class="relative flex-1 min-h-[280px] w-full">
                             <canvas id="dashboardChart"></canvas>
                         </div>
                     </div>
@@ -482,6 +503,11 @@
                     <button onclick="switchConfigSubTab('backup')" id="cfgTab-backup" class="cfg-tab-btn px-4 py-2.5 font-semibold text-xs rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800">
                         <i class="fa-solid fa-database flex-shrink-0 mr-1.5"></i> Backup & Reset Data
                     </button>
+                    <button onclick="switchConfigSubTab('supabase')" id="cfgTab-supabase" class="cfg-tab-btn px-4 py-2.5 font-semibold text-xs rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center">
+                        <i class="fa-solid fa-cloud flex-shrink-0 mr-1.5 text-emerald-600"></i>
+                        <span>Supabase Cloud</span>
+                        <span id="cfgSupabaseMiniTag" class="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700">Online</span>
+                    </button>
                 </div>
 
                 <!-- SUB-TAB 1: Profil Komplek -->
@@ -626,6 +652,165 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- SUB-TAB 5: Supabase Cloud Database -->
+                <div id="cfgContent-supabase" class="cfg-sub-content hidden space-y-6">
+                    <!-- Project Overview & Connection Status Card -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-5">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg border border-emerald-100 shadow-2xs">
+                                    <i class="fa-solid fa-cloud"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">Integrasi Database Supabase Cloud</h3>
+                                    <p class="text-xs text-slate-500">Penyimpanan persisten cloud tersinkronisasi untuk seluruh data SIMAK.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <a href="https://supabase.com/dashboard/project/anmuadtarsxidtvyhmzm" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl flex items-center space-x-1.5 transition-colors">
+                                    <span>Buka Dashboard</span>
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                </a>
+                                <button onclick="checkSupabaseStatus(true)" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm flex items-center space-x-1.5 transition-colors">
+                                    <i class="fa-solid fa-rotate"></i>
+                                    <span>Tes Koneksi</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Project Credentials Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nama Proyek</span>
+                                <div id="sbViewProjName" class="text-xs font-bold text-slate-800 truncate">Sistem Informasi Manajemen Komplek</div>
+                            </div>
+                            <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Project ID</span>
+                                <div id="sbViewProjId" class="text-xs font-mono font-semibold text-slate-700 truncate">anmuadtarsxidtvyhmzm</div>
+                            </div>
+                            <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status Server</span>
+                                <div class="flex items-center space-x-1.5">
+                                    <span id="sbStatusDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span id="sbStatusState" class="text-xs font-bold text-emerald-700">Terhubung</span>
+                                    <span id="sbViewLatency" class="text-[10px] text-slate-400 ml-1">(~ms)</span>
+                                </div>
+                            </div>
+                            <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">API Key</span>
+                                <div id="sbViewProjKey" class="text-xs font-mono text-slate-600 truncate">sb_publish...nwOsOK</div>
+                            </div>
+                        </div>
+
+                        <!-- Status Alert Note -->
+                        <div id="sbStatusBanner" class="p-3.5 rounded-xl border text-xs flex items-start space-x-2.5 bg-sky-50 text-sky-800 border-sky-200">
+                            <i id="sbBannerIcon" class="fa-solid fa-circle-info text-sky-600 mt-0.5"></i>
+                            <div class="flex-1">
+                                <span id="sbStatusMessage" class="leading-relaxed">Sedang memeriksa status tabel database di Supabase...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sync Actions Card -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-5">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">Sinkronisasi Data (Cloud Sync)</h3>
+                                <p class="text-xs text-slate-500">Unggah data lokal ke Supabase atau tarik data terbaru dari cloud.</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] text-slate-400 block uppercase font-semibold">Sinkronisasi Terakhir</span>
+                                <span id="sbLastSyncTime" class="text-xs font-medium text-slate-600">Belum disinkronkan</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200/80 space-y-3">
+                                <div class="flex items-center space-x-2 text-emerald-800">
+                                    <i class="fa-solid fa-cloud-arrow-up text-base"></i>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider">Unggah ke Cloud (Push)</h4>
+                                </div>
+                                <p class="text-xs text-slate-600 leading-relaxed">
+                                    Kirimkan seluruh data warga, pembukuan kas, checklist iuran, dan kontak saat ini ke Supabase.
+                                </p>
+                                <button onclick="pushDataToSupabase(true)" id="btnPushToCloud" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-sm flex items-center justify-center space-x-2 transition-all">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    <span>Kirim Semua Data ke Supabase</span>
+                                </button>
+                            </div>
+
+                            <div class="p-4 bg-sky-50/60 rounded-xl border border-sky-200/80 space-y-3">
+                                <div class="flex items-center space-x-2 text-sky-800">
+                                    <i class="fa-solid fa-cloud-arrow-down text-base"></i>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider">Tarik dari Cloud (Pull)</h4>
+                                </div>
+                                <p class="text-xs text-slate-600 leading-relaxed">
+                                    Ambil data terbaru yang tersimpan di Supabase untuk memperbarui tampilan aplikasi ini.
+                                </p>
+                                <button onclick="pullDataFromSupabase(true)" id="btnPullFromCloud" class="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs rounded-xl shadow-sm flex items-center justify-center space-x-2 transition-all">
+                                    <i class="fa-solid fa-cloud-arrow-down"></i>
+                                    <span>Tarik Data Terbaru dari Supabase</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Auto-sync info -->
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-arrows-rotate text-emerald-600"></i>
+                                <span><strong>Sinkronisasi Otomatis:</strong> Setiap kali data warga, kas, atau profil diubah, data otomatis dicadangkan ke Supabase.</span>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 uppercase">Aktif</span>
+                        </div>
+                    </div>
+
+                    <!-- SQL Editor Setup Script Card -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">Skrip Inisialisasi Database (SQL Editor)</h3>
+                                <p class="text-xs text-slate-500">Salin skrip SQL ini lalu jalankan di menu <strong>SQL Editor</strong> dashboard Supabase Anda.</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <a href="https://supabase.com/dashboard/project/anmuadtarsxidtvyhmzm/sql/new" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl flex items-center space-x-1.5 transition-colors shadow-sm">
+                                    <i class="fa-solid fa-terminal text-emerald-400"></i>
+                                    <span>Buka SQL Editor Supabase</span>
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-slate-400"></i>
+                                </a>
+                                <button onclick="copySupabaseSqlScript()" id="btnCopySql" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl flex items-center space-x-1.5 transition-colors shadow-sm">
+                                    <i class="fa-solid fa-copy"></i>
+                                    <span id="btnCopySqlText">Salin Skrip SQL</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Instructions Steps -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                                <span class="font-bold text-slate-700">Langkah 1</span>
+                                <p class="text-slate-500">Klik tombol <strong>Salin Skrip SQL</strong> di atas.</p>
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                                <span class="font-bold text-slate-700">Langkah 2</span>
+                                <p class="text-slate-500">Buka <strong>SQL Editor</strong> di dashboard Supabase lalu tempel (paste) kode.</p>
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                                <span class="font-bold text-slate-700">Langkah 3</span>
+                                <p class="text-slate-500">Klik tombol <strong>Run</strong> di Supabase, lalu kembali ke sini dan klik <strong>Tes Koneksi</strong>.</p>
+                            </div>
+                        </div>
+
+                        <!-- Code Preview Box -->
+                        <div class="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900">
+                            <div class="flex items-center justify-between px-4 py-2 bg-slate-950/80 border-b border-slate-800 text-[11px] text-slate-400">
+                                <span class="font-mono">simak_database_setup.sql</span>
+                                <span class="text-emerald-400 font-semibold text-[10px]">PostgreSQL + RLS Ready</span>
+                            </div>
+                            <pre class="p-4 text-xs font-mono text-emerald-300 overflow-x-auto max-h-72 custom-scrollbar leading-relaxed" id="sqlPreviewCode">-- Memuat skrip SQL...</pre>
+                        </div>
+                    </div>
+                </div>
             </section>
 
         </main>
@@ -634,6 +819,14 @@
         <footer class="bg-white border-t border-slate-200 py-4 px-6 text-center text-xs text-slate-600">
             Copyright © 2026 - developed by Rama
         </footer>
+    </div>
+
+    <!-- SIMAK Toast Notification Container -->
+    <div id="simakToast" class="fixed bottom-5 right-5 z-[150] transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none max-w-sm w-full">
+        <div id="simakToastCard" class="bg-slate-900 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-700/80 flex items-center space-x-3">
+            <i id="simakToastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base flex-shrink-0"></i>
+            <div class="flex-1 text-xs font-medium" id="simakToastText">Pesan sistem</div>
+        </div>
     </div>
 
     <!-- MODAL 1: TAMBAH / EDIT WARGA -->
@@ -923,7 +1116,10 @@
             }
         }
 
-        function saveLocalStorageData() {
+        let supabaseSyncTimer = null;
+        let cachedSqlScript = '';
+
+        function saveLocalStorageData(skipCloudSync = false) {
             try {
                 localStorage.setItem('SIMAK_CONFIG', JSON.stringify(systemConfig));
                 localStorage.setItem('SIMAK_ADMINS', JSON.stringify(adminUsers));
@@ -932,9 +1128,292 @@
                 localStorage.setItem('SIMAK_KAS', JSON.stringify(kasData));
                 localStorage.setItem('SIMAK_PENGUMUMAN', JSON.stringify(pengumumanData));
                 localStorage.setItem('SIMAK_KONTAK', JSON.stringify(kontakData));
+
+                if (!skipCloudSync) {
+                    debouncePushToSupabase();
+                }
             } catch (err) {
                 console.error("Gagal menyimpan ke localStorage:", err);
             }
+        }
+
+        function showToastNotification(message, type = 'info') {
+            const toast = document.getElementById('simakToast');
+            const card = document.getElementById('simakToastCard');
+            const icon = document.getElementById('simakToastIcon');
+            const text = document.getElementById('simakToastText');
+            if (!toast || !card || !icon || !text) return;
+
+            text.textContent = message;
+
+            if (type === 'success') {
+                icon.className = 'fa-solid fa-circle-check text-emerald-400 text-base flex-shrink-0';
+                card.className = 'bg-slate-900 text-white p-3.5 rounded-2xl shadow-2xl border border-emerald-500/50 flex items-center space-x-3';
+            } else if (type === 'error') {
+                icon.className = 'fa-solid fa-circle-exclamation text-rose-400 text-base flex-shrink-0';
+                card.className = 'bg-slate-900 text-white p-3.5 rounded-2xl shadow-2xl border border-rose-500/50 flex items-center space-x-3';
+            } else if (type === 'warning') {
+                icon.className = 'fa-solid fa-triangle-exclamation text-amber-400 text-base flex-shrink-0';
+                card.className = 'bg-slate-900 text-white p-3.5 rounded-2xl shadow-2xl border border-amber-500/50 flex items-center space-x-3';
+            } else {
+                icon.className = 'fa-solid fa-circle-info text-sky-400 text-base flex-shrink-0';
+                card.className = 'bg-slate-900 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-700/80 flex items-center space-x-3';
+            }
+
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 3500);
+        }
+
+        function goToSupabaseTab() {
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Silakan login admin untuk mengelola Supabase.', 'info');
+                return;
+            }
+            navigateTo('/config');
+            setTimeout(() => {
+                switchConfigSubTab('supabase');
+            }, 100);
+        }
+
+        async function checkSupabaseStatus(manual = false) {
+            const badge = document.getElementById('supabaseStatusBadge');
+            const badgeDot = document.getElementById('supabaseBadgeDot');
+            const badgeText = document.getElementById('supabaseBadgeText');
+            const miniTag = document.getElementById('cfgSupabaseMiniTag');
+            const statusDot = document.getElementById('sbStatusDot');
+            const statusState = document.getElementById('sbStatusState');
+            const latencyEl = document.getElementById('sbViewLatency');
+            const bannerMsg = document.getElementById('sbStatusMessage');
+            const banner = document.getElementById('sbStatusBanner');
+            const bannerIcon = document.getElementById('sbBannerIcon');
+            const sqlPreview = document.getElementById('sqlPreviewCode');
+
+            if (manual) showToastNotification('Memeriksa koneksi Supabase Cloud...', 'info');
+
+            try {
+                const res = await fetch('/api/supabase/status');
+                const data = await res.json();
+
+                if (data.sqlScript) {
+                    cachedSqlScript = data.sqlScript;
+                    if (sqlPreview) sqlPreview.textContent = data.sqlScript;
+                }
+
+                if (data.connected) {
+                    if (data.tablesReady) {
+                        if (badge) badge.className = 'cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 shadow-2xs';
+                        if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+                        if (badgeText) badgeText.textContent = 'Terhubung';
+                        if (miniTag) {
+                            miniTag.className = 'ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700';
+                            miniTag.textContent = 'Online';
+                        }
+                        if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+                        if (statusState) {
+                            statusState.textContent = 'Tabel Siap & Terhubung';
+                            statusState.className = 'text-xs font-bold text-emerald-700';
+                        }
+                        if (banner) {
+                            banner.className = 'p-3.5 rounded-xl border text-xs flex items-start space-x-2.5 bg-emerald-50 text-emerald-800 border-emerald-200';
+                        }
+                        if (bannerIcon) bannerIcon.className = 'fa-solid fa-circle-check text-emerald-600 mt-0.5';
+                        if (bannerMsg) bannerMsg.textContent = 'Koneksi database Supabase aktif dan tabel telah terkonfigurasi dengan baik. Data otomatis tersinkron.';
+                        if (manual) showToastNotification('Supabase terhubung dan tabel siap digunakan!', 'success');
+                    } else {
+                        if (badge) badge.className = 'cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 shadow-2xs';
+                        if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+                        if (badgeText) badgeText.textContent = 'Perlu Setup SQL';
+                        if (miniTag) {
+                            miniTag.className = 'ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700';
+                            miniTag.textContent = 'Setup SQL';
+                        }
+                        if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-amber-500';
+                        if (statusState) {
+                            statusState.textContent = 'Perlu Inisialisasi Tabel';
+                            statusState.className = 'text-xs font-bold text-amber-700';
+                        }
+                        if (banner) {
+                            banner.className = 'p-3.5 rounded-xl border text-xs flex items-start space-x-2.5 bg-amber-50 text-amber-800 border-amber-200';
+                        }
+                        if (bannerIcon) bannerIcon.className = 'fa-solid fa-triangle-exclamation text-amber-600 mt-0.5';
+                        if (bannerMsg) bannerMsg.textContent = 'Koneksi ke proyek Supabase berhasil! Namun tabel database belum dibuat. Silakan salin skrip SQL di bawah dan jalankan di SQL Editor Supabase.';
+                        if (manual) showToastNotification('Koneksi Supabase OK. Silakan jalankan skrip SQL di Supabase.', 'warning');
+                    }
+
+                    if (latencyEl && data.latencyMs) latencyEl.textContent = `(${data.latencyMs} ms)`;
+                } else {
+                    throw new Error(data.error || 'Gagal tersambung ke Supabase');
+                }
+            } catch (err) {
+                console.warn('Error checking Supabase:', err);
+                if (badge) badge.className = 'cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 shadow-2xs';
+                if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+                if (badgeText) badgeText.textContent = 'Terputus';
+                if (miniTag) {
+                    miniTag.className = 'ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-700';
+                    miniTag.textContent = 'Offline';
+                }
+                if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+                if (statusState) {
+                    statusState.textContent = 'Terputus';
+                    statusState.className = 'text-xs font-bold text-rose-700';
+                }
+                if (banner) {
+                    banner.className = 'p-3.5 rounded-xl border text-xs flex items-start space-x-2.5 bg-rose-50 text-rose-800 border-rose-200';
+                }
+                if (bannerIcon) bannerIcon.className = 'fa-solid fa-triangle-exclamation text-rose-600 mt-0.5';
+                if (bannerMsg) bannerMsg.textContent = 'Gagal terhubung ke Supabase: ' + err.message;
+                if (manual) showToastNotification('Koneksi Supabase gagal: ' + err.message, 'error');
+            }
+        }
+
+        function debouncePushToSupabase() {
+            clearTimeout(supabaseSyncTimer);
+            const badgeText = document.getElementById('supabaseBadgeText');
+            if (badgeText) badgeText.textContent = 'Menyimpan...';
+
+            supabaseSyncTimer = setTimeout(() => {
+                pushDataToSupabase(false);
+            }, 1200);
+        }
+
+        async function pushDataToSupabase(manual = false) {
+            const btn = document.getElementById('btnPushToCloud');
+            const badgeText = document.getElementById('supabaseBadgeText');
+            const lastSyncEl = document.getElementById('sbLastSyncTime');
+
+            if (manual && btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Mengirim ke Cloud...</span>';
+            }
+
+            try {
+                const res = await fetch('/api/supabase/push', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        systemConfig,
+                        adminUsers,
+                        wargaData,
+                        iuranData,
+                        kasData,
+                        pengumumanData,
+                        kontakData
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    if (badgeText) badgeText.textContent = 'Terhubung';
+                    const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    if (lastSyncEl) lastSyncEl.textContent = `Hari ini, ${nowStr}`;
+                    if (manual) showToastNotification('Data berhasil disimpan ke Supabase Cloud!', 'success');
+                } else {
+                    if (data.tablesReady === false) {
+                        if (badgeText) badgeText.textContent = 'Perlu Setup SQL';
+                        if (manual) showToastNotification(data.message, 'warning');
+                    } else {
+                        throw new Error(data.error || data.message || 'Gagal menyimpan data');
+                    }
+                }
+            } catch (err) {
+                console.warn('Gagal push ke Supabase:', err);
+                if (badgeText) badgeText.textContent = 'Gagal Simpan';
+                if (manual) showToastNotification('Gagal mengirim ke Supabase: ' + err.message, 'error');
+            } finally {
+                if (manual && btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i><span>Kirim Semua Data ke Supabase</span>';
+                }
+            }
+        }
+
+        async function pullDataFromSupabase(manual = false) {
+            const btn = document.getElementById('btnPullFromCloud');
+            const lastSyncEl = document.getElementById('sbLastSyncTime');
+
+            if (manual && btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Menarik Data...</span>';
+            }
+
+            try {
+                const res = await fetch('/api/supabase/pull');
+                const data = await res.json();
+
+                if (data.success && data.data) {
+                    const d = data.data;
+                    let updated = false;
+
+                    if (d.config) { systemConfig = d.config; updated = true; }
+                    if (d.admins && Array.isArray(d.admins)) { adminUsers = d.admins; updated = true; }
+                    if (d.warga && Array.isArray(d.warga)) { wargaData = d.warga; updated = true; }
+                    if (d.iuran && typeof d.iuran === 'object') { iuranData = d.iuran; updated = true; }
+                    if (d.kas && Array.isArray(d.kas)) { kasData = d.kas; updated = true; }
+                    if (d.pengumuman && Array.isArray(d.pengumuman)) { pengumumanData = d.pengumuman; updated = true; }
+                    if (d.kontak && Array.isArray(d.kontak)) { kontakData = d.kontak; updated = true; }
+
+                    if (updated) {
+                        saveLocalStorageData(true); // Hindari loop push
+                        updateAppIdentityUI();
+                        renderDashboard();
+                        renderWargaTable();
+                        renderIuranTable();
+                        renderKasTable();
+                        renderPengumumanGrid();
+                        renderKontakGrid();
+                        renderAdminUsersTable();
+
+                        const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                        if (lastSyncEl) lastSyncEl.textContent = `Hari ini, ${nowStr}`;
+                        if (manual) showToastNotification('Data berhasil ditarik dari Supabase Cloud!', 'success');
+                    } else if (manual) {
+                        showToastNotification('Data di Supabase masih kosong atau identik.', 'info');
+                    }
+                } else if (manual) {
+                    showToastNotification(data.message || 'Tabel Supabase belum diinisialisasi.', 'warning');
+                }
+            } catch (err) {
+                console.warn('Gagal pull dari Supabase:', err);
+                if (manual) showToastNotification('Gagal menarik data dari Supabase: ' + err.message, 'error');
+            } finally {
+                if (manual && btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i><span>Tarik Data Terbaru dari Supabase</span>';
+                }
+            }
+        }
+
+        function copySupabaseSqlScript() {
+            const sql = cachedSqlScript || (document.getElementById('sqlPreviewCode') ? document.getElementById('sqlPreviewCode').textContent : '');
+            if (!sql) {
+                showToastNotification('Skrip SQL belum siap untuk disalin.', 'warning');
+                return;
+            }
+
+            navigator.clipboard.writeText(sql).then(() => {
+                const btnText = document.getElementById('btnCopySqlText');
+                if (btnText) btnText.textContent = 'Berhasil Disalin!';
+                showToastNotification('Skrip SQL berhasil disalin ke clipboard!', 'success');
+                setTimeout(() => {
+                    if (btnText) btnText.textContent = 'Salin Skrip SQL';
+                }, 2500);
+            }).catch(() => {
+                showToastNotification('Gagal menyalin, silakan blok teks secara manual.', 'error');
+            });
+        }
+
+        async function initSupabaseSync() {
+            await checkSupabaseStatus(false);
+            // Tarik data cloud jika ada
+            pullDataFromSupabase(false);
         }
 
         function updateAppIdentityUI() {
@@ -1025,6 +1504,9 @@
 
             // Jalankan router saat pertama kali halaman dimuat
             handleRouting();
+
+            // Cek status dan inisialisasi sinkronisasi Supabase Cloud
+            initSupabaseSync();
         };
 
         function checkAdminSession() {
@@ -1275,7 +1757,24 @@
             renderDashboardChart();
         }
 
-        function renderDashboardChart() {
+        let currentChartFilter = 'all';
+
+        function setChartFilter(filter) {
+            currentChartFilter = filter;
+            ['all', 'masuk', 'keluar'].forEach(f => {
+                const btn = document.getElementById(`btnChartFilter${f.charAt(0).toUpperCase() + f.slice(1)}`);
+                if (btn) {
+                    if (f === filter) {
+                        btn.className = 'px-2.5 py-1 rounded-lg transition-all font-semibold bg-white text-slate-800 shadow-xs';
+                    } else {
+                        btn.className = 'px-2.5 py-1 rounded-lg transition-all text-slate-600 hover:text-sky-600';
+                    }
+                }
+            });
+            renderDashboardChart(true);
+        }
+
+        function renderDashboardChart(animateReplay = false) {
             const canvasElem = document.getElementById('dashboardChart');
             if (!canvasElem) return;
 
@@ -1289,34 +1788,157 @@
                 if (k.tipe === 'keluar') monthlyExpense[mIndex] += Number(k.nominal);
             });
 
-            if (chartInstance) chartInstance.destroy();
+            // Gradient Dinamis untuk Pemasukan (Sky to Indigo-Blue)
+            const gradientIncome = ctx.createLinearGradient(0, 0, 0, 280);
+            gradientIncome.addColorStop(0, '#38bdf8'); // sky-400
+            gradientIncome.addColorStop(0.7, '#0284c7'); // sky-600
+            gradientIncome.addColorStop(1, '#0369a1'); // sky-700
+
+            // Gradient Dinamis untuk Pengeluaran (Rose to Crimson)
+            const gradientExpense = ctx.createLinearGradient(0, 0, 0, 280);
+            gradientExpense.addColorStop(0, '#fb7185'); // rose-400
+            gradientExpense.addColorStop(0.7, '#f43f5e'); // rose-500
+            gradientExpense.addColorStop(1, '#e11d48'); // rose-600
+
+            // Hover state gradient
+            const hoverIncome = ctx.createLinearGradient(0, 0, 0, 280);
+            hoverIncome.addColorStop(0, '#7dd3fc');
+            hoverIncome.addColorStop(1, '#0284c7');
+
+            const hoverExpense = ctx.createLinearGradient(0, 0, 0, 280);
+            hoverExpense.addColorStop(0, '#fda4af');
+            hoverExpense.addColorStop(1, '#f43f5e');
+
+            const datasets = [];
+
+            if (currentChartFilter === 'all' || currentChartFilter === 'masuk') {
+                datasets.push({
+                    label: 'Pemasukan (Rp)',
+                    data: monthlyIncome,
+                    backgroundColor: gradientIncome,
+                    hoverBackgroundColor: hoverIncome,
+                    borderColor: '#0284c7',
+                    borderWidth: 1.5,
+                    borderRadius: { topLeft: 8, topRight: 8, bottomLeft: 2, bottomRight: 2 },
+                    borderSkipped: false,
+                    barPercentage: 0.75,
+                    categoryPercentage: 0.7
+                });
+            }
+
+            if (currentChartFilter === 'all' || currentChartFilter === 'keluar') {
+                datasets.push({
+                    label: 'Pengeluaran (Rp)',
+                    data: monthlyExpense,
+                    backgroundColor: gradientExpense,
+                    hoverBackgroundColor: hoverExpense,
+                    borderColor: '#e11d48',
+                    borderWidth: 1.5,
+                    borderRadius: { topLeft: 8, topRight: 8, bottomLeft: 2, bottomRight: 2 },
+                    borderSkipped: false,
+                    barPercentage: 0.75,
+                    categoryPercentage: 0.7
+                });
+            }
+
+            if (chartInstance) {
+                chartInstance.destroy();
+                chartInstance = null;
+            }
 
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
-                    datasets: [
-                        { label: 'Pemasukan (Rp)', data: monthlyIncome, backgroundColor: '#0284c7', borderRadius: 6 },
-                        { label: 'Pengeluaran (Rp)', data: monthlyExpense, backgroundColor: '#f43f5e', borderRadius: 6 }
-                    ]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'top', labels: { font: { family: 'Inter', size: 11 } } } },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    // Animasi muncul dinamis bergantian (staggered rise) dengan efek spring bounce
+                    animation: {
+                        duration: 1100,
+                        easing: 'easeOutBack',
+                        delay: (context) => {
+                            let delay = 0;
+                            if (context.type === 'data' && context.mode === 'default') {
+                                delay = context.dataIndex * 50 + context.datasetIndex * 120;
+                            }
+                            return delay;
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                font: { family: 'Inter', size: 11, weight: '500' },
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.94)',
+                            titleFont: { family: 'Inter', size: 12, weight: 'bold' },
+                            bodyFont: { family: 'Inter', size: 11 },
+                            padding: 12,
+                            cornerRadius: 10,
+                            boxPadding: 6,
+                            usePointStyle: true,
+                            callbacks: {
+                                title: function(items) {
+                                    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                    const idx = items[0].dataIndex;
+                                    return `${months[idx]} ${currentActiveYear}`;
+                                },
+                                label: function(context) {
+                                    const val = context.parsed.y || 0;
+                                    return ` ${context.dataset.label}: Rp ${val.toLocaleString('id-ID')}`;
+                                },
+                                afterBody: function(items) {
+                                    if (items.length >= 2) {
+                                        const inc = items[0].parsed.y || 0;
+                                        const exp = items[1].parsed.y || 0;
+                                        const net = inc - exp;
+                                        const sign = net >= 0 ? '+' : '';
+                                        return [`\nSelisih Bersih: ${sign}Rp ${net.toLocaleString('id-ID')}`];
+                                    }
+                                    return [];
+                                }
+                            }
+                        }
+                    },
                     scales: {
                         y: {
                             beginAtZero: true,
+                            grid: {
+                                color: '#f1f5f9',
+                                drawBorder: false
+                            },
                             ticks: {
                                 font: { family: 'Inter', size: 10 },
+                                color: '#64748b',
                                 callback: function(val) {
                                     if (val >= 1000000) return (val / 1000000) + ' Jt';
-                                    if (val >= 1000) return (val / 1000) + ' Rbu';
+                                    if (val >= 1000) return (val / 1000) + ' Rb';
                                     return val;
                                 }
                             }
                         },
-                        x: { ticks: { font: { family: 'Inter', size: 10 } } }
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: { family: 'Inter', size: 10, weight: '500' },
+                                color: '#64748b'
+                            }
+                        }
                     }
                 }
             });
@@ -1760,6 +2382,10 @@
             if (targetBtn) {
                 targetBtn.classList.add('border-sky-600', 'text-sky-600');
                 targetBtn.classList.remove('border-transparent', 'text-slate-500');
+            }
+
+            if (subId === 'supabase') {
+                checkSupabaseStatus(false);
             }
         }
 
