@@ -303,7 +303,7 @@
                                 <input type="text" id="searchWargaInput" oninput="handleWargaSearchFilter()" placeholder="Cari nama kepala keluarga / HP..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
                             </div>
                             <select id="filterBlokSelect" onchange="handleWargaSearchFilter()" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
-                                <option value="ALL">Semua Blok Rumah (A - Z)</option>
+                                <option value="ALL">Semua Blok Rumah (A - F)</option>
                             </select>
                         </div>
                         <button onclick="openModalWarga()" class="admin-only hidden bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-indigo-600/20 flex items-center justify-center space-x-2 transition-all">
@@ -363,7 +363,7 @@
                                 <input type="text" id="searchIuranInput" oninput="handleIuranFilterChange()" placeholder="Cari nama kepala keluarga / blok..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
                             </div>
                             <select id="iuranFilterBlokSelect" onchange="handleIuranFilterChange()" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
-                                <option value="ALL">Semua Blok (A - Z)</option>
+                                <option value="ALL">Semua Blok (A - F)</option>
                             </select>
                         </div>
                     </div>
@@ -1968,10 +1968,6 @@
 
         function matchesBlockFilter(blokStr, filterVal) {
             if (!filterVal || filterVal === 'ALL') return true;
-            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-            if (filterVal === 'LAINNYA') {
-                return !letters.some(letter => isMatchingBlockLetter(blokStr, letter));
-            }
             return isMatchingBlockLetter(blokStr, filterVal);
         }
 
@@ -1984,23 +1980,17 @@
             const currentWargaVal = filterWargaSelect ? filterWargaSelect.value : 'ALL';
             const currentIuranVal = filterIuranSelect ? filterIuranSelect.value : 'ALL';
 
-            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-            let optionsHtmlWarga = '<option value="ALL">Semua Blok Rumah (A - Z)</option>';
-            let optionsHtmlIuran = '<option value="ALL">Semua Blok (A - Z)</option>';
+            // Filter blok rumah warga khusus Blok A sampai F
+            const blockLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
+            let optionsHtmlWarga = '<option value="ALL">Semua Blok Rumah (A - F)</option>';
+            let optionsHtmlIuran = '<option value="ALL">Semua Blok (A - F)</option>';
 
-            letters.forEach(letter => {
+            blockLetters.forEach(letter => {
                 optionsHtmlWarga += `<option value="${letter}">Blok ${letter}</option>`;
                 optionsHtmlIuran += `<option value="${letter}">Blok ${letter}</option>`;
             });
 
-            // Periksa jika ada data warga dengan blok non-alfabet (misal RT/RW atau nama jalan)
-            const hasNonAlphabet = wargaData.some(w => !letters.some(l => isMatchingBlockLetter(w.blok, l)));
-            if (hasNonAlphabet) {
-                optionsHtmlWarga += '<option value="LAINNYA">Lainnya / Non-Blok</option>';
-                optionsHtmlIuran += '<option value="LAINNYA">Lainnya / Non-Blok</option>';
-            }
-
-            const validValues = ['ALL', ...letters, 'LAINNYA'];
+            const validValues = ['ALL', ...blockLetters];
 
             if (filterWargaSelect) {
                 filterWargaSelect.innerHTML = optionsHtmlWarga;
