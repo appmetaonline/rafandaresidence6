@@ -53,12 +53,12 @@
                 <span id="loginAlertText">Username atau password salah!</span>
             </div>
 
-            <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+            <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4" autocomplete="off">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-1.5 tracking-wider">Username Admin</label>
                     <div class="relative">
                         <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input type="text" id="loginUsername" required placeholder="Masukkan username" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all">
+                        <input type="text" id="loginUsername" required autocomplete="off" placeholder="Masukkan username" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all">
                     </div>
                 </div>
 
@@ -66,7 +66,7 @@
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-1.5 tracking-wider">Password</label>
                     <div class="relative">
                         <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all">
+                        <input type="password" id="loginPassword" required autocomplete="new-password" placeholder="••••••••" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all">
                     </div>
                 </div>
 
@@ -1776,16 +1776,34 @@
             updateRoleUI();
         }
 
+        function resetLoginForm() {
+            const form = document.getElementById('loginForm');
+            if (form) form.reset();
+            const userInput = document.getElementById('loginUsername');
+            const passInput = document.getElementById('loginPassword');
+            if (userInput) userInput.value = '';
+            if (passInput) passInput.value = '';
+            const alertBox = document.getElementById('loginAlert');
+            if (alertBox) alertBox.classList.add('hidden');
+        }
+
         function openLoginModal() {
+            resetLoginForm();
             const alertBox = document.getElementById('loginAlert');
             const overlay = document.getElementById('loginModalOverlay');
             if (alertBox) alertBox.classList.add('hidden');
             if (overlay) overlay.classList.remove('hidden');
+            // Fokuskan kursor ke input username
+            setTimeout(() => {
+                const userInput = document.getElementById('loginUsername');
+                if (userInput) userInput.focus();
+            }, 50);
             // Update URL menjadi /auth saat modal login terbuka
             window.history.pushState({}, "", "/auth");
         }
 
         function closeLoginModal() {
+            resetLoginForm();
             const overlay = document.getElementById('loginModalOverlay');
             if (overlay) overlay.classList.add('hidden');
             // Kembalikan URL ke dashboard atau halaman aktif sebelumnya
@@ -1804,21 +1822,30 @@
                 if (alertBox) alertBox.classList.add('hidden');
                 activeAdminSession = foundAdmin;
                 sessionStorage.setItem('SIMAK_ACTIVE_ADMIN', JSON.stringify(foundAdmin));
+                resetLoginForm();
                 closeLoginModal();
                 updateRoleUI();
                 navigateTo('/dashboard');
+                showToastNotification(`Selamat datang kembali, ${foundAdmin.name || foundAdmin.username}!`, 'success');
             } else {
                 if (alertBox) alertBox.classList.remove('hidden');
                 const alertText = document.getElementById('loginAlertText');
                 if (alertText) alertText.textContent = 'Username atau password salah!';
+                const passEl = document.getElementById('loginPassword');
+                if (passEl) {
+                    passEl.value = '';
+                    passEl.focus();
+                }
             }
         }
 
         function handleLogout() {
             sessionStorage.removeItem('SIMAK_ACTIVE_ADMIN');
             activeAdminSession = null;
+            resetLoginForm();
             updateRoleUI();
             navigateTo('/dashboard');
+            showToastNotification('Anda telah berhasil logout.', 'info');
         }
 
         function updateRoleUI() {
