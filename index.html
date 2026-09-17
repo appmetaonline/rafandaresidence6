@@ -1067,6 +1067,11 @@
                     </div>
                 </div>
 
+                <div class="flex items-center space-x-2 text-[11px] text-emerald-800 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200/80">
+                    <i class="fa-solid fa-cloud-arrow-up text-emerald-600 text-xs shrink-0"></i>
+                    <span>Data kontak darurat ini otomatis tersimpan di database <strong>Supabase Cloud</strong>.</span>
+                </div>
+
                 <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                     <button type="button" onclick="closeModalKontak()" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-200 cursor-pointer">Batal</button>
                     <button type="submit" class="px-5 py-2 bg-teal-600 text-white text-xs font-semibold rounded-xl hover:bg-teal-700 shadow-md cursor-pointer">Simpan Kontak</button>
@@ -3354,6 +3359,42 @@
 
         function closeModalKontak() { document.getElementById('modalKontak').classList.add('hidden'); }
 
+        async function syncKontakToSupabase(item) {
+            try {
+                const res = await fetch('/api/supabase/kontak', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                });
+                const data = await res.json();
+                if (data && data.success) {
+                    const badgeText = document.getElementById('supabaseBadgeText');
+                    if (badgeText) badgeText.textContent = 'Terhubung';
+                    const lastSyncEl = document.getElementById('sbLastSyncTime');
+                    if (lastSyncEl) {
+                        const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                        lastSyncEl.textContent = `Hari ini, ${nowStr}`;
+                    }
+                }
+                return data;
+            } catch (err) {
+                console.warn('Gagal sync kontak ke Supabase:', err);
+                return { success: false, error: err.message };
+            }
+        }
+
+        async function deleteKontakFromSupabase(id) {
+            try {
+                const res = await fetch('/api/supabase/kontak/' + encodeURIComponent(id), {
+                    method: 'DELETE'
+                });
+                return await res.json();
+            } catch (err) {
+                console.warn('Gagal menghapus kontak dari Supabase:', err);
+                return { success: false, error: err.message };
+            }
+        }
+
         function saveKontak(e) {
             e.preventDefault();
             if (!activeAdminSession) {
@@ -3373,20 +3414,31 @@
                 return;
             }
 
+            let savedItem;
             if (id) {
                 const index = kontakData.findIndex(k => k.id === id);
-                if (index !== -1) kontakData[index] = { id, nama, nomor, kategori, icon };
+                savedItem = { id, nama, nomor, kategori, icon };
+                if (index !== -1) kontakData[index] = savedItem;
+                else kontakData.push(savedItem);
             } else {
                 const newId = 'KT-' + Date.now();
-                kontakData.push({ id: newId, nama, nomor, kategori, icon });
+                savedItem = { id: newId, nama, nomor, kategori, icon };
+                kontakData.push(savedItem);
             }
 
             closeModalKontak();
             saveLocalStorageData();
             renderKontakGrid();
 
-            // Tampilkan pop-up dialog dengan format kalimat "data berhasil disimpan"
+            // Tampilkan pop-up dialog konfirmasi bahwa data berhasil disimpan
             showSuccessModal('data berhasil disimpan');
+
+            // Otomatis simpan ke database Supabase Cloud
+            syncKontakToSupabase(savedItem).then(res => {
+                if (res && res.success) {
+                    showToastNotification('Data kontak darurat otomatis tersimpan di Supabase Cloud', 'success');
+                }
+            });
         }
 
         function editKontak(id) { 
@@ -3417,6 +3469,7 @@
                     kontakData = kontakData.filter(item => item.id !== id);
                     saveLocalStorageData();
                     renderKontakGrid();
+                    deleteKontakFromSupabase(id);
                     showToastNotification('Kontak darurat berhasil dihapus.', 'success');
                 }
             });

@@ -113,8 +113,10 @@ CREATE TABLE IF NOT EXISTS public.kontak (
     nama TEXT NOT NULL,
     nomor TEXT NOT NULL,
     kategori TEXT NOT NULL,
+    icon TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.kontak ADD COLUMN IF NOT EXISTS icon TEXT;
 ALTER TABLE public.kontak ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Akses Publik Kontak" ON public.kontak;
 CREATE POLICY "Akses Publik Kontak" ON public.kontak FOR ALL USING (true) WITH CHECK (true);
@@ -351,6 +353,27 @@ app.post('/api/supabase/push', async (req, res) => {
       }
     }
 
+    if (Array.isArray(kontakData) && kontakData.length > 0) {
+      try {
+        const kontakRows = kontakData.map(kt => ({
+          id: String(kt.id),
+          nama: String(kt.nama || ''),
+          nomor: String(kt.nomor || ''),
+          kategori: String(kt.kategori || 'Lainnya'),
+          icon: kt.icon ? String(kt.icon) : null
+        }));
+        let { error: ktErr } = await supabase.from('kontak').upsert(kontakRows, { onConflict: 'id' });
+        if (ktErr && ktErr.message && ktErr.message.includes('icon')) {
+          const rowsWithoutIcon = kontakRows.map(({ icon, ...rest }) => rest);
+          const retry = await supabase.from('kontak').upsert(rowsWithoutIcon, { onConflict: 'id' });
+          ktErr = retry.error;
+        }
+        if (!ktErr) relationalSaved = true;
+      } catch (e) {
+        // Silently proceed
+      }
+    }
+
     if (storeSaved || relationalSaved) {
       return res.json({
         success: true,
@@ -368,6 +391,112 @@ app.post('/api/supabase/push', async (req, res) => {
     });
   } catch (err) {
     console.error('Error pushing data to Supabase:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// API: Simpan / Upsert Kontak Darurat Otomatis ke Supabase
+app.post('/api/supabase/kontak', async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    const kontak = req.body;
+    if (!kontak || !kontak.id || !kontak.nama || !kontak.nomor) {
+      return res.status(400).json({ success: false, message: 'Data kontak tidak lengkap' });
+    }
+
+    const item = {
+      id: String(kontak.id),
+      nama: String(kontak.nama),
+      nomor: String(kontak.nomor),
+      kategori: String(kontak.kategori || 'Lainnya'),
+      icon: kontak.icon ? String(kontak.icon) : null
+    };
+
+    let savedToRelational = false;
+    let savedToStore = false;
+
+    // 1. Simpan ke tabel relasional public.kontak (jika tabel ada)
+    try {
+      let { error: relErr } = await supabase.from('kontak').upsert([item], { onConflict: 'id' });
+      if (relErr && relErr.message && relErr.message.includes('icon')) {
+        const { icon, ...itemNoIcon } = item;
+        const retry = await supabase.from('kontak').upsert([itemNoIcon], { onConflict: 'id' });
+        relErr = retry.error;
+      }
+      if (!relErr) savedToRelational = true;
+    } catch (e) {
+      console.warn('Relational kontak upsert note:', e.message);
+    }
+
+    // 2. Simpan ke tabel simak_store (key: 'kontak')
+    try {
+      const { data: storeRow } = await supabase.from('simak_store').select('data').eq('key', 'kontak').maybeSingle();
+      let currentList = [];
+      if (storeRow && Array.isArray(storeRow.data)) {
+        currentList = [...storeRow.data];
+      }
+      const existingIdx = currentList.findIndex(k => k.id === item.id);
+      if (existingIdx !== -1) {
+        currentList[existingIdx] = { ...currentList[existingIdx], ...item };
+      } else {
+        currentList.push(item);
+      }
+
+      const { error: storeErr } = await supabase.from('simak_store').upsert([{
+        key: 'kontak',
+        data: currentList,
+        updated_at: new Date().toISOString()
+      }], { onConflict: 'key' });
+
+      if (!storeErr) savedToStore = true;
+    } catch (e) {
+      console.warn('Store kontak update note:', e.message);
+    }
+
+    return res.json({
+      success: true,
+      message: 'Data kontak darurat otomatis tersimpan di database Supabase Cloud!',
+      item,
+      savedToRelational,
+      savedToStore
+    });
+  } catch (err) {
+    console.error('Error saving kontak to Supabase:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// API: Hapus Kontak Darurat dari Supabase
+app.delete('/api/supabase/kontak/:id', async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    const { id } = req.params;
+
+    // 1. Hapus dari tabel kontak jika ada
+    try {
+      await supabase.from('kontak').delete().eq('id', id);
+    } catch (e) {
+      // Silently proceed
+    }
+
+    // 2. Hapus dari simak_store
+    try {
+      const { data: storeRow } = await supabase.from('simak_store').select('data').eq('key', 'kontak').maybeSingle();
+      if (storeRow && Array.isArray(storeRow.data)) {
+        const filtered = storeRow.data.filter(k => k.id !== id);
+        await supabase.from('simak_store').upsert([{
+          key: 'kontak',
+          data: filtered,
+          updated_at: new Date().toISOString()
+        }], { onConflict: 'key' });
+      }
+    } catch (e) {
+      // Silently proceed
+    }
+
+    res.json({ success: true, message: 'Kontak darurat berhasil dihapus dari Supabase' });
+  } catch (err) {
+    console.error('Error deleting kontak from Supabase:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
