@@ -306,9 +306,9 @@
                         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1 max-w-xl">
                             <div class="relative flex-1">
                                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                                <input type="text" id="searchWargaInput" oninput="renderWargaTable()" placeholder="Cari nama kepala keluarga / HP..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                <input type="text" id="searchWargaInput" oninput="handleWargaSearchFilter()" placeholder="Cari nama kepala keluarga / HP..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
                             </div>
-                            <select id="filterBlokSelect" onchange="renderWargaTable()" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <select id="filterBlokSelect" onchange="handleWargaSearchFilter()" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
                                 <option value="ALL">Semua Blok Rumah (A - Z)</option>
                             </select>
                         </div>
@@ -335,6 +335,12 @@
                                 <!-- Populated dynamically -->
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Pagination Bar Warga (25 data / page) -->
+                    <div id="wargaPagination" class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-slate-600">
+                        <div id="wargaPaginationInfo" class="text-slate-600"></div>
+                        <div id="wargaPaginationControls" class="flex items-center flex-wrap gap-1"></div>
                     </div>
                 </div>
             </section>
@@ -1068,6 +1074,8 @@
         let currentActiveYear = 2026;
         let chartInstance = null;
         let activeAdminSession = null; // Holds current logged in admin object
+        let currentWargaPage = 1;
+        const WARGA_PER_PAGE = 25;
 
         // System Config Default
         let systemConfig = {
@@ -2153,10 +2161,16 @@
             });
         }
 
+        function handleWargaSearchFilter() {
+            currentWargaPage = 1;
+            renderWargaTable();
+        }
+
         function renderWargaTable() {
             const searchInput = document.getElementById('searchWargaInput');
             const filterSelect = document.getElementById('filterBlokSelect');
             const tbody = document.getElementById('wargaTableBody');
+            const pagContainer = document.getElementById('wargaPagination');
             if (!tbody) return;
 
             const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
@@ -2168,15 +2182,31 @@
                 return matchSearch && matchBlok;
             });
 
-            if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400 text-xs">Tidak ada data warga yang sesuai.</td></tr>';
+            const totalItems = filtered.length;
+            const totalPages = Math.max(1, Math.ceil(totalItems / WARGA_PER_PAGE));
+            if (currentWargaPage > totalPages) currentWargaPage = totalPages;
+            if (currentWargaPage < 1) currentWargaPage = 1;
+
+            const isLoggedIn = activeAdminSession !== null;
+            const colSpanCount = isLoggedIn ? 7 : 6;
+
+            if (totalItems === 0) {
+                tbody.innerHTML = `<tr><td colspan="${colSpanCount}" class="px-4 py-8 text-center text-slate-400 text-xs">Tidak ada data warga yang sesuai.</td></tr>`;
+                if (pagContainer) pagContainer.classList.add('hidden');
                 return;
             }
 
-            const isLoggedIn = activeAdminSession !== null;
-            tbody.innerHTML = filtered.map((w, index) => `
+            if (pagContainer) pagContainer.classList.remove('hidden');
+
+            const startIndex = (currentWargaPage - 1) * WARGA_PER_PAGE;
+            const endIndex = Math.min(startIndex + WARGA_PER_PAGE, totalItems);
+            const paginatedItems = filtered.slice(startIndex, endIndex);
+
+            tbody.innerHTML = paginatedItems.map((w, index) => {
+                const globalIndex = startIndex + index + 1;
+                return `
                 <tr class="hover:bg-slate-50 transition-colors">
-                    <td class="px-4 py-3 font-medium text-slate-400">${index + 1}</td>
+                    <td class="px-4 py-3 font-medium text-slate-400">${globalIndex}</td>
                     <td class="px-4 py-3 font-semibold text-slate-800">${w.nama}</td>
                     <td class="px-4 py-3">
                         <span class="inline-block bg-slate-100 text-slate-700 text-xs font-medium px-2.5 py-1 rounded-md border border-slate-200">${w.blok}</span>
@@ -2191,11 +2221,93 @@
                         </a>
                     </td>
                     <td class="px-4 py-3 text-center space-x-1 ${isLoggedIn ? '' : 'hidden'} admin-only">
-                        <button onclick="editWarga('${w.id}')" class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="deleteWarga('${w.id}')" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
+                        <button onclick="editWarga('${w.id}')" title="Edit Data Warga" class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteWarga('${w.id}')" title="Hapus Data Warga" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
+
+            renderWargaPaginationControls(totalItems, totalPages, startIndex, endIndex);
+        }
+
+        function renderWargaPaginationControls(totalItems, totalPages, startIndex, endIndex) {
+            const infoElem = document.getElementById('wargaPaginationInfo');
+            const controlsElem = document.getElementById('wargaPaginationControls');
+            if (!infoElem || !controlsElem) return;
+
+            infoElem.innerHTML = `Menampilkan <span class="font-bold text-slate-800">${startIndex + 1}</span> - <span class="font-bold text-slate-800">${endIndex}</span> dari <span class="font-bold text-slate-800">${totalItems}</span> data warga <span class="text-slate-300 mx-1">|</span> <span class="text-slate-500 font-medium">${WARGA_PER_PAGE} per halaman</span>`;
+
+            let buttonsHtml = '';
+
+            // Tombol Sebelumnya
+            const prevDisabled = currentWargaPage <= 1;
+            buttonsHtml += `
+                <button onclick="changeWargaPage(${currentWargaPage - 1})" ${prevDisabled ? 'disabled' : ''} 
+                    class="px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all flex items-center space-x-1 ${prevDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-indigo-600 shadow-2xs cursor-pointer'}">
+                    <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                    <span class="hidden sm:inline">Sebelumnya</span>
+                </button>
+            `;
+
+            // Hitung rentang tombol nomor halaman
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentWargaPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            if (startPage > 1) {
+                buttonsHtml += `
+                    <button onclick="changeWargaPage(1)" class="w-8 h-8 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer">1</button>
+                `;
+                if (startPage > 2) {
+                    buttonsHtml += `<span class="px-1 text-slate-400">...</span>`;
+                }
+            }
+
+            for (let p = startPage; p <= endPage; p++) {
+                if (p === currentWargaPage) {
+                    buttonsHtml += `
+                        <button class="w-8 h-8 rounded-lg bg-indigo-600 text-white text-xs font-bold shadow-xs cursor-default">${p}</button>
+                    `;
+                } else {
+                    buttonsHtml += `
+                        <button onclick="changeWargaPage(${p})" class="w-8 h-8 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-indigo-600 transition-all cursor-pointer">${p}</button>
+                    `;
+                }
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    buttonsHtml += `<span class="px-1 text-slate-400">...</span>`;
+                }
+                buttonsHtml += `
+                    <button onclick="changeWargaPage(${totalPages})" class="w-8 h-8 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer">${totalPages}</button>
+                `;
+            }
+
+            // Tombol Selanjutnya
+            const nextDisabled = currentWargaPage >= totalPages;
+            buttonsHtml += `
+                <button onclick="changeWargaPage(${currentWargaPage + 1})" ${nextDisabled ? 'disabled' : ''} 
+                    class="px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all flex items-center space-x-1 ${nextDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-indigo-600 shadow-2xs cursor-pointer'}">
+                    <span class="hidden sm:inline">Selanjutnya</span>
+                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+            `;
+
+            controlsElem.innerHTML = buttonsHtml;
+        }
+
+        function changeWargaPage(newPage) {
+            currentWargaPage = newPage;
+            renderWargaTable();
+            const wargaSection = document.getElementById('tab-warga');
+            if (wargaSection) {
+                wargaSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         function openModalWarga(id = null) {
