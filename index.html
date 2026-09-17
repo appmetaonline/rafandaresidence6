@@ -422,12 +422,12 @@
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3 pt-2">
-                        <select id="kasTypeFilter" onchange="renderKasTable()" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-3 py-2 focus:outline-none">
+                        <select id="kasTypeFilter" onchange="handleKasFilterChange()" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-3 py-2 focus:outline-none">
                             <option value="ALL">Semua Jenis Transaksi</option>
                             <option value="masuk">Pemasukan (Kas Masuk)</option>
                             <option value="keluar">Pengeluaran (Kas Keluar)</option>
                         </select>
-                        <select id="kasMonthFilter" onchange="renderKasTable()" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-3 py-2 focus:outline-none">
+                        <select id="kasMonthFilter" onchange="handleKasFilterChange()" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-3 py-2 focus:outline-none">
                             <option value="ALL">Semua Bulan</option>
                             <option value="1">Januari</option>
                             <option value="2">Februari</option>
@@ -460,6 +460,12 @@
                                 <!-- Populated dynamically -->
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Pagination Bar Kas (25 data / page) -->
+                    <div id="kasPagination" class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-slate-600">
+                        <div id="kasPaginationInfo" class="text-slate-600"></div>
+                        <div id="kasPaginationControls" class="flex items-center flex-wrap gap-1"></div>
                     </div>
                 </div>
             </section>
@@ -1089,6 +1095,8 @@
         const WARGA_PER_PAGE = 25;
         let currentIuranPage = 1;
         const IURAN_PER_PAGE = 25;
+        let currentKasPage = 1;
+        const KAS_PER_PAGE = 25;
 
         // System Config Default
         let systemConfig = {
@@ -1879,6 +1887,8 @@
 
         function onGlobalYearChange(year) {
             currentActiveYear = parseInt(year, 10);
+            currentIuranPage = 1;
+            currentKasPage = 1;
             const badge = document.getElementById('headerYearBadge');
             const mDesc = document.getElementById('dashMasukDesc');
             const kDesc = document.getElementById('dashKeluarDesc');
@@ -2589,10 +2599,16 @@
             renderDashboard();
         }
 
+        function handleKasFilterChange() {
+            currentKasPage = 1;
+            renderKasTable();
+        }
+
         function renderKasTable() {
             const typeElem = document.getElementById('kasTypeFilter');
             const monthElem = document.getElementById('kasMonthFilter');
             const tbody = document.getElementById('kasTableBody');
+            const pagContainer = document.getElementById('kasPagination');
             if (!tbody) return;
 
             const typeFilter = typeElem ? typeElem.value : 'ALL';
@@ -2605,15 +2621,27 @@
                 return matchYear && matchType && matchMonth;
             });
 
+            const totalItems = filtered.length;
+            const totalPages = Math.max(1, Math.ceil(totalItems / KAS_PER_PAGE));
+            if (currentKasPage > totalPages) currentKasPage = totalPages;
+            if (currentKasPage < 1) currentKasPage = 1;
+
             const isLoggedIn = activeAdminSession !== null;
             const colspan = isLoggedIn ? 6 : 5;
 
-            if (filtered.length === 0) {
+            if (totalItems === 0) {
                 tbody.innerHTML = `<tr><td colspan="${colspan}" class="px-4 py-8 text-center text-slate-400 text-xs">Belum ada transaksi kas untuk periode ini.</td></tr>`;
+                if (pagContainer) pagContainer.classList.add('hidden');
                 return;
             }
 
-            tbody.innerHTML = filtered.map(k => `
+            if (pagContainer) pagContainer.classList.remove('hidden');
+
+            const startIndex = (currentKasPage - 1) * KAS_PER_PAGE;
+            const endIndex = Math.min(startIndex + KAS_PER_PAGE, totalItems);
+            const paginated = filtered.slice(startIndex, endIndex);
+
+            tbody.innerHTML = paginated.map(k => `
                 <tr class="hover:bg-slate-50 transition-colors">
                     <td class="px-4 py-3 text-xs text-slate-500">${k.tanggal}</td>
                     <td class="px-4 py-3">
@@ -2632,6 +2660,87 @@
                     </td>
                 </tr>
             `).join('');
+
+            renderKasPaginationControls(totalItems, totalPages, startIndex, endIndex);
+        }
+
+        function renderKasPaginationControls(totalItems, totalPages, startIndex, endIndex) {
+            const infoElem = document.getElementById('kasPaginationInfo');
+            const controlsElem = document.getElementById('kasPaginationControls');
+            if (!infoElem || !controlsElem) return;
+
+            infoElem.innerHTML = `Menampilkan <span class="font-bold text-slate-800">${startIndex + 1}</span> - <span class="font-bold text-slate-800">${endIndex}</span> dari <span class="font-bold text-slate-800">${totalItems}</span> data transaksi kas`;
+
+            let buttonsHtml = '';
+
+            // Tombol Sebelumnya
+            const prevDisabled = currentKasPage <= 1;
+            buttonsHtml += `
+                <button onclick="changeKasPage(${currentKasPage - 1})" ${prevDisabled ? 'disabled' : ''} 
+                    class="px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all flex items-center space-x-1 ${prevDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-indigo-600 shadow-2xs cursor-pointer'}">
+                    <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                    <span class="hidden sm:inline">Sebelumnya</span>
+                </button>
+            `;
+
+            // Rentang nomor halaman
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentKasPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            if (startPage > 1) {
+                buttonsHtml += `
+                    <button onclick="changeKasPage(1)" class="w-8 h-8 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer">1</button>
+                `;
+                if (startPage > 2) {
+                    buttonsHtml += `<span class="px-1 text-slate-400">...</span>`;
+                }
+            }
+
+            for (let p = startPage; p <= endPage; p++) {
+                if (p === currentKasPage) {
+                    buttonsHtml += `
+                        <button class="w-8 h-8 rounded-lg bg-indigo-600 text-white text-xs font-bold shadow-xs cursor-default">${p}</button>
+                    `;
+                } else {
+                    buttonsHtml += `
+                        <button onclick="changeKasPage(${p})" class="w-8 h-8 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-indigo-600 transition-all cursor-pointer">${p}</button>
+                    `;
+                }
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    buttonsHtml += `<span class="px-1 text-slate-400">...</span>`;
+                }
+                buttonsHtml += `
+                    <button onclick="changeKasPage(${totalPages})" class="w-8 h-8 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer">${totalPages}</button>
+                `;
+            }
+
+            // Tombol Selanjutnya
+            const nextDisabled = currentKasPage >= totalPages;
+            buttonsHtml += `
+                <button onclick="changeKasPage(${currentKasPage + 1})" ${nextDisabled ? 'disabled' : ''} 
+                    class="px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all flex items-center space-x-1 ${nextDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-indigo-600 shadow-2xs cursor-pointer'}">
+                    <span class="hidden sm:inline">Selanjutnya</span>
+                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+            `;
+
+            controlsElem.innerHTML = buttonsHtml;
+        }
+
+        function changeKasPage(newPage) {
+            currentKasPage = newPage;
+            renderKasTable();
+            const kasSection = document.getElementById('tab-kas');
+            if (kasSection) {
+                kasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         function openModalKas(id = null) {
