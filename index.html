@@ -398,7 +398,7 @@
                             <h3 class="font-bold text-slate-800 text-lg">Pencatatan Transaksi Kas</h3>
                             <p class="text-xs text-slate-500">Kelola rincian pemasukan dan pengeluaran komplek</p>
                         </div>
-                        <button onclick="openModalKas()" class="bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-amber-500/20 flex items-center justify-center space-x-2 transition-all">
+                        <button onclick="openModalKas()" class="admin-only hidden bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-amber-500/20 flex items-center justify-center space-x-2 transition-all">
                             <i class="fa-solid fa-plus text-xs"></i>
                             <span>Tambah Transaksi Kas</span>
                         </button>
@@ -436,7 +436,7 @@
                                     <th class="px-4 py-3">Kategori</th>
                                     <th class="px-4 py-3">Keterangan</th>
                                     <th class="px-4 py-3 text-right">Nominal</th>
-                                    <th class="px-4 py-3 text-center">Aksi</th>
+                                    <th class="px-4 py-3 text-center admin-only">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="kasTableBody" class="divide-y divide-slate-200 bg-white">
@@ -2369,8 +2369,11 @@
                 return matchYear && matchType && matchMonth;
             });
 
+            const isLoggedIn = activeAdminSession !== null;
+            const colspan = isLoggedIn ? 6 : 5;
+
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 text-xs">Belum ada transaksi kas untuk periode ini.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="${colspan}" class="px-4 py-8 text-center text-slate-400 text-xs">Belum ada transaksi kas untuk periode ini.</td></tr>`;
                 return;
             }
 
@@ -2387,15 +2390,21 @@
                     <td class="px-4 py-3 text-right font-bold ${k.tipe === 'masuk' ? 'text-emerald-600' : 'text-rose-600'}">
                         Rp ${Number(k.nominal).toLocaleString('id-ID')}
                     </td>
-                    <td class="px-4 py-3 text-center space-x-1">
-                        <button onclick="editKas('${k.id}')" class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="deleteKas('${k.id}')" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
+                    <td class="px-4 py-3 text-center space-x-1 ${isLoggedIn ? '' : 'hidden'} admin-only">
+                        <button onclick="editKas('${k.id}')" title="Edit Transaksi" class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteKas('${k.id}')" title="Hapus Transaksi" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
                 </tr>
             `).join('');
         }
 
         function openModalKas(id = null) {
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Hanya user admin yang dapat menambah atau mengedit transaksi kas.', 'warning');
+                return;
+            }
+
             document.getElementById('formKas').reset();
             document.getElementById('kasId').value = '';
             document.getElementById('modalKasTitle').textContent = id ? 'Edit Transaksi Kas' : 'Tambah Transaksi Kas';
@@ -2419,6 +2428,12 @@
 
         function saveKas(e) {
             e.preventDefault();
+            if (!activeAdminSession) {
+                openLoginModal();
+                showToastNotification('Hanya user admin yang dapat menyimpan transaksi kas.', 'warning');
+                return;
+            }
+
             const id = document.getElementById('kasId').value;
             const tipe = document.getElementById('kasTipe').value;
             const tanggal = document.getElementById('kasTanggal').value;
