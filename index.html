@@ -1960,25 +1960,19 @@ function resetLoginForm() {
     if (alertBox) alertBox.classList.add('hidden');
 }
 
-async function openLoginModal() {
-    showNavLoading();
-    try {
-        await fetchAndSyncFromDatabase(300);
-    } finally {
-        hideNavLoading();
-        resetLoginForm();
-        const alertBox = document.getElementById('loginAlert');
-        const overlay = document.getElementById('loginModalOverlay');
-        if (alertBox) alertBox.classList.add('hidden');
-        if (overlay) overlay.classList.remove('hidden');
-        // Fokuskan kursor ke input username
-        setTimeout(() => {
-            const userInput = document.getElementById('loginUsername');
-            if (userInput) userInput.focus();
-        }, 80);
-        // Update URL menjadi /auth saat modal login terbuka
-        window.history.pushState({}, "", "/auth");
-    }
+function openLoginModal() {
+    resetLoginForm();
+    const alertBox = document.getElementById('loginAlert');
+    const overlay = document.getElementById('loginModalOverlay');
+    if (alertBox) alertBox.classList.add('hidden');
+    if (overlay) overlay.classList.remove('hidden');
+    // Fokuskan kursor ke input username
+    setTimeout(() => {
+        const userInput = document.getElementById('loginUsername');
+        if (userInput) userInput.focus();
+    }, 50);
+    // Update URL menjadi /auth saat modal login terbuka
+    window.history.pushState({}, "", "/auth");
 }
 
 function closeLoginModal() {
