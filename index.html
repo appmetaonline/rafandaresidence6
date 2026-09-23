@@ -25,6 +25,14 @@
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col md:flex-row overflow-x-hidden">
 
+    <!-- Indikator Loading Pengambilan Data (Hanya Muncul Tulisan Memuat Data) -->
+    <div id="dbLoadingOverlay" class="hidden fixed inset-0 z-[120] bg-slate-900/15 backdrop-blur-[1px] flex items-center justify-center p-4 transition-all duration-150 opacity-0 pointer-events-none">
+        <div class="inline-flex items-center space-x-2.5 px-4 py-2.5 rounded-xl bg-white shadow-lg border border-slate-200 text-slate-700">
+            <i class="fa-solid fa-circle-notch fa-spin text-sky-600 text-sm"></i>
+            <span class="text-sm font-medium text-slate-700">Memuat data...</span>
+        </div>
+    </div>
+
     <!-- MODAL LOGIN ADMIN -->
     <div id="loginModalOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 shadow-2xl border border-slate-100 relative overflow-hidden">
@@ -200,14 +208,6 @@
 
         <!-- Main Workspace Container -->
         <main class="p-4 md:p-6 space-y-6 flex-1 max-w-7xl w-full mx-auto relative min-h-[500px]">
-
-            <!-- Indikator Loading Pengambilan Data (Hanya Muncul Tulisan Memuat Data) -->
-            <div id="dbLoadingOverlay" class="hidden absolute inset-0 z-30 bg-slate-50/70 backdrop-blur-[1px] rounded-2xl flex items-center justify-center p-4 transition-all duration-150 opacity-0 pointer-events-none">
-                <div class="inline-flex items-center space-x-2.5 px-4 py-2.5 rounded-xl bg-white shadow-sm border border-slate-200 text-slate-700">
-                    <i class="fa-solid fa-circle-notch fa-spin text-sky-600 text-sm"></i>
-                    <span class="text-sm font-medium text-slate-700">Memuat data...</span>
-                </div>
-            </div>
 
             <section id="tab-dashboard" class="tab-content space-y-6">
                 <!-- Summary KPI Cards Grid (4 Columns) -->
@@ -1740,46 +1740,18 @@ function hideNavLoading() {
     }
 }
 
-async function executeNavWithDatabaseFetch(tabId) {
-    if (tabId === 'config' && activeAdminSession === null) {
-        if (typeof openLoginModal === 'function') openLoginModal();
-        return;
-    }
-
-    // Tutup mobile menu segera jika terbuka
-    const sidebar = document.getElementById('mainSidebar');
-    const backdrop = document.getElementById('sidebarBackdrop');
-    if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 768) {
-        sidebar.classList.add('-translate-x-full');
-        if (backdrop) backdrop.classList.add('hidden');
-    }
-
-    isNavFetching = true;
-    showNavLoading();
-
-    // Update style nav button di sidebar langsung
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('bg-slate-800', 'text-white', 'font-semibold');
-        btn.classList.add('text-slate-300');
-    });
-    const activeBtn = document.getElementById('nav-' + tabId);
-    if (activeBtn) {
-        activeBtn.classList.add('bg-slate-800', 'text-white', 'font-semibold');
-        activeBtn.classList.remove('text-slate-300');
-    }
-
-    // Batalkan request navigasi sebelumnya jika ada
+async function fetchAndSyncFromDatabase(minDelayMs = 300) {
     if (navDataFetchController) {
-        navDataFetchController.abort();
+        try { navDataFetchController.abort(); } catch(e) {}
     }
     navDataFetchController = new AbortController();
 
-    const minDelay = new Promise(resolve => setTimeout(resolve, 350));
+    const minDelay = new Promise(resolve => setTimeout(resolve, minDelayMs));
     const fetchPromise = fetch('/api/supabase/pull', { signal: navDataFetchController.signal })
         .then(res => res.json())
         .catch(err => {
             if (err.name !== 'AbortError') {
-                console.warn('Gagal memuat database saat navigasi:', err);
+                console.warn('Gagal memuat database:', err);
             }
             return null;
         });
@@ -1811,9 +1783,44 @@ async function executeNavWithDatabaseFetch(tabId) {
                 const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 lastSyncEl.textContent = `Hari ini, ${nowStr}`;
             }
+            return true;
         }
     } catch (err) {
         console.warn('Nav database fetch error:', err);
+    }
+    return false;
+}
+
+async function executeNavWithDatabaseFetch(tabId) {
+    if (tabId === 'config' && activeAdminSession === null) {
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+    }
+
+    // Tutup mobile menu segera jika terbuka
+    const sidebar = document.getElementById('mainSidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 768) {
+        sidebar.classList.add('-translate-x-full');
+        if (backdrop) backdrop.classList.add('hidden');
+    }
+
+    isNavFetching = true;
+    showNavLoading();
+
+    // Update style nav button di sidebar langsung
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-slate-800', 'text-white', 'font-semibold');
+        btn.classList.add('text-slate-300');
+    });
+    const activeBtn = document.getElementById('nav-' + tabId);
+    if (activeBtn) {
+        activeBtn.classList.add('bg-slate-800', 'text-white', 'font-semibold');
+        activeBtn.classList.remove('text-slate-300');
+    }
+
+    try {
+        await fetchAndSyncFromDatabase(300);
     } finally {
         isNavFetching = false;
         hideNavLoading();
@@ -1953,19 +1960,25 @@ function resetLoginForm() {
     if (alertBox) alertBox.classList.add('hidden');
 }
 
-function openLoginModal() {
-    resetLoginForm();
-    const alertBox = document.getElementById('loginAlert');
-    const overlay = document.getElementById('loginModalOverlay');
-    if (alertBox) alertBox.classList.add('hidden');
-    if (overlay) overlay.classList.remove('hidden');
-    // Fokuskan kursor ke input username
-    setTimeout(() => {
-        const userInput = document.getElementById('loginUsername');
-        if (userInput) userInput.focus();
-    }, 50);
-    // Update URL menjadi /auth saat modal login terbuka
-    window.history.pushState({}, "", "/auth");
+async function openLoginModal() {
+    showNavLoading();
+    try {
+        await fetchAndSyncFromDatabase(300);
+    } finally {
+        hideNavLoading();
+        resetLoginForm();
+        const alertBox = document.getElementById('loginAlert');
+        const overlay = document.getElementById('loginModalOverlay');
+        if (alertBox) alertBox.classList.add('hidden');
+        if (overlay) overlay.classList.remove('hidden');
+        // Fokuskan kursor ke input username
+        setTimeout(() => {
+            const userInput = document.getElementById('loginUsername');
+            if (userInput) userInput.focus();
+        }, 80);
+        // Update URL menjadi /auth saat modal login terbuka
+        window.history.pushState({}, "", "/auth");
+    }
 }
 
 function closeLoginModal() {
@@ -1976,11 +1989,18 @@ function closeLoginModal() {
     window.history.pushState({}, "", "/dashboard");
 }
 
-function handleLoginSubmit(e) {
+async function handleLoginSubmit(e) {
     e.preventDefault();
     const userInput = document.getElementById('loginUsername').value.trim();
     const passInput = document.getElementById('loginPassword').value.trim();
     const alertBox = document.getElementById('loginAlert');
+
+    showNavLoading();
+    try {
+        await fetchAndSyncFromDatabase(300);
+    } finally {
+        hideNavLoading();
+    }
 
     const foundAdmin = adminUsers.find(a => a.username === userInput && a.password === passInput);
 
@@ -2073,21 +2093,29 @@ function updateRoleUI() {
 
 // js/dashboard.js - Modul Tampilan Dashboard, Grafik Arus Kas, & Filter Global
 
-function onGlobalYearChange(year) {
-    currentActiveYear = parseInt(year, 10);
-    currentIuranPage = 1;
-    currentKasPage = 1;
-    const badge = document.getElementById('headerYearBadge');
-    const mDesc = document.getElementById('dashMasukDesc');
-    const kDesc = document.getElementById('dashKeluarDesc');
+async function onGlobalYearChange(year) {
+    showNavLoading();
+    try {
+        await fetchAndSyncFromDatabase(300);
+    } finally {
+        currentActiveYear = parseInt(year, 10);
+        currentWargaPage = 1;
+        currentIuranPage = 1;
+        currentKasPage = 1;
+        const badge = document.getElementById('headerYearBadge');
+        const mDesc = document.getElementById('dashMasukDesc');
+        const kDesc = document.getElementById('dashKeluarDesc');
 
-    if (badge) badge.textContent = 'Tahun ' + currentActiveYear;
-    if (mDesc) mDesc.textContent = 'Tahun ' + currentActiveYear;
-    if (kDesc) kDesc.textContent = 'Tahun ' + currentActiveYear;
+        if (badge) badge.textContent = 'Tahun ' + currentActiveYear;
+        if (mDesc) mDesc.textContent = 'Tahun ' + currentActiveYear;
+        if (kDesc) kDesc.textContent = 'Tahun ' + currentActiveYear;
 
-    renderDashboard();
-    if (typeof renderIuranTable === 'function') renderIuranTable();
-    if (typeof renderKasTable === 'function') renderKasTable();
+        hideNavLoading();
+
+        if (typeof renderDashboard === 'function') renderDashboard();
+        if (typeof renderIuranTable === 'function') renderIuranTable();
+        if (typeof renderKasTable === 'function') renderKasTable();
+    }
 }
 
 function isMatchingBlockLetter(blokStr, letter) {
@@ -2523,12 +2551,19 @@ function renderWargaPaginationControls(totalItems, totalPages, startIndex, endIn
     controlsElem.innerHTML = buttonsHtml;
 }
 
-function changeWargaPage(newPage) {
-    currentWargaPage = newPage;
-    renderWargaTable();
-    const wargaSection = document.getElementById('tab-warga');
-    if (wargaSection) {
-        wargaSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+async function changeWargaPage(newPage) {
+    if (newPage === currentWargaPage) return;
+    showNavLoading();
+    try {
+        await fetchAndSyncFromDatabase(300);
+    } finally {
+        currentWargaPage = newPage;
+        hideNavLoading();
+        renderWargaTable();
+        const wargaSection = document.getElementById('tab-warga');
+        if (wargaSection) {
+            wargaSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 }
 
@@ -2815,12 +2850,19 @@ function renderIuranPaginationControls(totalItems, totalPages, startIndex, endIn
     controlsElem.innerHTML = buttonsHtml;
 }
 
-function changeIuranPage(newPage) {
-    currentIuranPage = newPage;
-    renderIuranTable();
-    const iuranSection = document.getElementById('tab-iuran');
-    if (iuranSection) {
-        iuranSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+async function changeIuranPage(newPage) {
+    if (newPage === currentIuranPage) return;
+    showNavLoading();
+    try {
+        await fetchAndSyncFromDatabase(300);
+    } finally {
+        currentIuranPage = newPage;
+        hideNavLoading();
+        renderIuranTable();
+        const iuranSection = document.getElementById('tab-iuran');
+        if (iuranSection) {
+            iuranSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 }
 
@@ -2977,12 +3019,19 @@ function renderKasPaginationControls(totalItems, totalPages, startIndex, endInde
     controlsElem.innerHTML = buttonsHtml;
 }
 
-function changeKasPage(newPage) {
-    currentKasPage = newPage;
-    renderKasTable();
-    const kasSection = document.getElementById('tab-kas');
-    if (kasSection) {
-        kasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+async function changeKasPage(newPage) {
+    if (newPage === currentKasPage) return;
+    showNavLoading();
+    try {
+        await fetchAndSyncFromDatabase(300);
+    } finally {
+        currentKasPage = newPage;
+        hideNavLoading();
+        renderKasTable();
+        const kasSection = document.getElementById('tab-kas');
+        if (kasSection) {
+            kasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 }
 
@@ -3840,24 +3889,6 @@ function resetSystemToDefault() {
 
 
 // js/app.js - Inisialisasi Aplikasi SIMAK & Global Event Handlers
-
-function onGlobalYearChange(year) {
-    currentActiveYear = parseInt(year, 10);
-    currentWargaPage = 1;
-    currentIuranPage = 1;
-    currentKasPage = 1;
-    const badge = document.getElementById('headerYearBadge');
-    const mDesc = document.getElementById('dashMasukDesc');
-    const kDesc = document.getElementById('dashKeluarDesc');
-
-    if (badge) badge.textContent = 'Tahun ' + currentActiveYear;
-    if (mDesc) mDesc.textContent = 'Tahun ' + currentActiveYear;
-    if (kDesc) kDesc.textContent = 'Tahun ' + currentActiveYear;
-
-    if (typeof renderDashboard === 'function') renderDashboard();
-    if (typeof renderIuranTable === 'function') renderIuranTable();
-    if (typeof renderKasTable === 'function') renderKasTable();
-}
 
 window.onload = function() {
     // 1. Muat data dari localStorage jika ada
