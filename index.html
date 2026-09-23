@@ -7,6 +7,8 @@
     <meta name="description" content="Sistem Informasi Manajemen Komplek Rafanda Residence 6">
     <meta property="og:title" content="SIMAK - Rafanda Residence 6">
     <meta property="og:description" content="Sistem Informasi Manajemen Komplek Rafanda Residence 6">
+    <!-- Favicon Default -->
+    <link id="appFavicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230284c7'><path d='M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z'/></svg>">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons CDN -->
@@ -24,6 +26,9 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col md:flex-row overflow-x-hidden">
+
+    <!-- Top Linear Web Progress Bar (Indikator Loading pada Link/Browser Web) -->
+    <div id="webLinkProgressBar" class="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-400 z-[999] transition-all duration-300 opacity-0 pointer-events-none shadow-sm" style="width: 0%;"></div>
 
     <!-- Indikator Loading Pengambilan Data (Hanya Muncul Tulisan Memuat Data) -->
     <div id="dbLoadingOverlay" class="hidden fixed inset-0 z-[120] bg-slate-900/15 backdrop-blur-[1px] flex items-center justify-center p-4 transition-all duration-150 opacity-0 pointer-events-none">
@@ -1558,6 +1563,7 @@ async function pushDataToSupabase(manual = false) {
     const badgeText = document.getElementById('supabaseBadgeText');
     const lastSyncEl = document.getElementById('sbLastSyncTime');
 
+    if (manual) showNavLoading();
     if (manual && btn) {
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Mengirim ke Cloud...</span>';
@@ -1598,6 +1604,7 @@ async function pushDataToSupabase(manual = false) {
         if (badgeText) badgeText.textContent = 'Gagal Simpan';
         if (manual) showToastNotification('Gagal mengirim ke Supabase: ' + err.message, 'error');
     } finally {
+        if (manual) hideNavLoading();
         if (manual && btn) {
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i><span>Kirim Semua Data ke Supabase</span>';
@@ -1609,6 +1616,7 @@ async function pullDataFromSupabase(manual = false) {
     const btn = document.getElementById('btnPullFromCloud');
     const lastSyncEl = document.getElementById('sbLastSyncTime');
 
+    if (manual) showNavLoading();
     if (manual && btn) {
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Menarik Data...</span>';
@@ -1654,6 +1662,7 @@ async function pullDataFromSupabase(manual = false) {
         console.warn('Gagal pull dari Supabase:', err);
         if (manual) showToastNotification('Gagal menarik data dari Supabase: ' + err.message, 'error');
     } finally {
+        if (manual) hideNavLoading();
         if (manual && btn) {
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i><span>Tarik Data Terbaru dari Supabase</span>';
@@ -1698,13 +1707,19 @@ function updateAppIdentityUI() {
         const cfgAlamat = document.getElementById('cfgAlamatKomplek');
         const cfgNominal = document.getElementById('cfgNominalIuran');
 
-        if (sidebarTitle) sidebarTitle.textContent = systemConfig.namaKomplek || "SIMAK";
+        const kName = systemConfig.namaKomplek || "SIMAK";
+        if (sidebarTitle) sidebarTitle.textContent = kName;
         if (sidebarSub) sidebarSub.textContent = systemConfig.alamatKomplek || "Manajemen Komplek";
         if (badgeNominal) badgeNominal.textContent = `Rp ${Number(systemConfig.nominalIuranDefault || 20000).toLocaleString('id-ID')}`;
         
         if (cfgNama) cfgNama.value = systemConfig.namaKomplek || '';
         if (cfgAlamat) cfgAlamat.value = systemConfig.alamatKomplek || '';
         if (cfgNominal) cfgNominal.value = systemConfig.nominalIuranDefault || 20000;
+
+        window._origDocumentTitle = `SIMAK - ${kName}`;
+        if (!isNavFetching) {
+            document.title = window._origDocumentTitle;
+        }
     } catch(e) {
         console.error("Error updating identity UI:", e);
     }
@@ -1717,10 +1732,42 @@ function toggleMobileMenu() {
     if (backdrop) backdrop.classList.toggle('hidden');
 }
 
+const DEFAULT_FAVICON_SVG = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230284c7'><path d='M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z'/></svg>";
+const LOADING_FAVICON_SVG = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='9' fill='none' stroke='%230284c7' stroke-width='3' stroke-linecap='round' stroke-dasharray='16 26'><animateTransform attributeName='transform' type='rotate' from='0 12 12' to='360 12 12' dur='0.7s' repeatCount='indefinite'/></circle></svg>";
+
 let navDataFetchController = null;
 let isNavFetching = false;
+let webBarProgressTimer = null;
 
 function showNavLoading() {
+    isNavFetching = true;
+
+    // 1. Tampilkan Indikator Loading Bar pada Link / Header Web
+    const webBar = document.getElementById('webLinkProgressBar');
+    if (webBar) {
+        if (webBarProgressTimer) clearTimeout(webBarProgressTimer);
+        webBar.style.width = '35%';
+        webBar.style.opacity = '1';
+        webBarProgressTimer = setTimeout(() => {
+            if (webBar && isNavFetching) {
+                webBar.style.width = '75%';
+            }
+        }, 120);
+    }
+
+    // 2. Indikator Loading pada Link Tab Browser (Judul Halaman Web & Favicon Link)
+    if (!window._origDocumentTitle) {
+        window._origDocumentTitle = document.title;
+    }
+    const appName = (typeof systemConfig !== 'undefined' && systemConfig.namaKomplek) ? systemConfig.namaKomplek : (window._origDocumentTitle || 'SIMAK');
+    document.title = '⏳ Memuat data... | ' + appName;
+
+    const favicon = document.getElementById('appFavicon');
+    if (favicon) {
+        favicon.href = LOADING_FAVICON_SVG;
+    }
+
+    // 3. Tampilkan Pop-up Tengah "Memuat data..."
     const overlay = document.getElementById('dbLoadingOverlay');
     if (overlay) {
         overlay.classList.remove('hidden', 'pointer-events-none');
@@ -1731,6 +1778,33 @@ function showNavLoading() {
 }
 
 function hideNavLoading() {
+    isNavFetching = false;
+
+    // 1. Selesaikan Progress Bar pada Link Web (Animasi Capai 100% lalu Fade Out)
+    const webBar = document.getElementById('webLinkProgressBar');
+    if (webBar) {
+        if (webBarProgressTimer) clearTimeout(webBarProgressTimer);
+        webBar.style.width = '100%';
+        setTimeout(() => {
+            if (webBar) {
+                webBar.style.opacity = '0';
+                setTimeout(() => {
+                    if (webBar) webBar.style.width = '0%';
+                }, 250);
+            }
+        }, 140);
+    }
+
+    // 2. Kembalikan Judul & Favicon Link Web
+    if (window._origDocumentTitle) {
+        document.title = window._origDocumentTitle;
+    }
+    const favicon = document.getElementById('appFavicon');
+    if (favicon) {
+        favicon.href = DEFAULT_FAVICON_SVG;
+    }
+
+    // 3. Sembunyikan Pop-up Tengah
     const overlay = document.getElementById('dbLoadingOverlay');
     if (overlay) {
         overlay.classList.add('opacity-0', 'pointer-events-none');
