@@ -1757,7 +1757,7 @@ function showNavLoading() {
         }, 120);
     }
 
-    // 2. Animasi Putaran Sesuai Default Browser pada Umumnya (Single Crisp White Arc)
+    // 2. Animasi Putaran Identik Bawaan Default Web Browser (Single Arc Sesuai Tema Browser Saat Refresh)
     if (!window._baseDocumentTitle) {
         window._baseDocumentTitle = document.title.replace(/^[◜◝◞◟◐◓◑◒⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏\s]+/, '') || 'SIMAK';
     }
@@ -1770,19 +1770,23 @@ function showNavLoading() {
     faviconStartTime = performance.now();
     lastFaviconRenderTime = 0;
 
+    // Warna ikon putaran browser default: Chrome Blue (#1a73e8) pada tema terang, Putih (#ffffff) pada tema gelap
+    const isBrowserDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const browserSpinnerColor = isBrowserDark ? '%23ffffff' : '%231a73e8';
+
     const renderBrowserDefaultSpinner = (timestamp) => {
         if (!isNavFetching) return;
 
-        // Render pada ~20-22 FPS (~45-50ms) agar browser tab me-render rotasi dengan mulus tanpa frame drop
+        // Render pada ~20-22 FPS (~45ms) agar tab browser merender rotasi mulus bebas lag
         if (timestamp - lastFaviconRenderTime >= 45) {
             lastFaviconRenderTime = timestamp;
             const elapsed = timestamp - faviconStartTime;
-            // Kecepatan putaran default browser: 1 siklus penuh per 1000ms (1.0 detik)
+            // 1000ms untuk 1 putaran penuh searah jarum jam (standar throbber browser)
             const angle = ((elapsed % 1000) / 1000) * 360;
             const favicon = document.getElementById('appFavicon');
             if (favicon) {
-                // Bentuk lingkaran default browser: satu busur lingkaran putih bersih (stroke-linecap round, 270 derajat) dengan track halus
-                favicon.href = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='10' fill='none' stroke='rgba(0,0,0,0.18)' stroke-width='2.6'/><circle cx='16' cy='16' r='10' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-dasharray='47 63' transform='rotate(${angle.toFixed(1)} 16 16)'/></svg>`;
+                // Persis ikon throbber bawaan browser saat refresh: HANYA 1 busur lingkaran tunggal (tanpa lingkaran background)
+                favicon.href = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='10.5' fill='none' stroke='${browserSpinnerColor}' stroke-width='3' stroke-linecap='round' stroke-dasharray='48 66' transform='rotate(${angle.toFixed(1)} 16 16)'/></svg>`;
             }
         }
         faviconSpinnerRaf = requestAnimationFrame(renderBrowserDefaultSpinner);
