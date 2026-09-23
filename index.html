@@ -1716,10 +1716,7 @@ function updateAppIdentityUI() {
         if (cfgAlamat) cfgAlamat.value = systemConfig.alamatKomplek || '';
         if (cfgNominal) cfgNominal.value = systemConfig.nominalIuranDefault || 20000;
 
-        window._origDocumentTitle = `SIMAK - ${kName}`;
-        if (!isNavFetching) {
-            document.title = window._origDocumentTitle;
-        }
+        document.title = `SIMAK - ${kName}`;
     } catch(e) {
         console.error("Error updating identity UI:", e);
     }
@@ -1731,9 +1728,6 @@ function toggleMobileMenu() {
     if (sidebar) sidebar.classList.toggle('-translate-x-full');
     if (backdrop) backdrop.classList.toggle('hidden');
 }
-
-const DEFAULT_FAVICON_SVG = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230284c7'><path d='M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z'/></svg>";
-const LOADING_FAVICON_SVG = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='9' fill='none' stroke='%230284c7' stroke-width='3' stroke-linecap='round' stroke-dasharray='16 26'><animateTransform attributeName='transform' type='rotate' from='0 12 12' to='360 12 12' dur='0.7s' repeatCount='indefinite'/></circle></svg>";
 
 let navDataFetchController = null;
 let isNavFetching = false;
@@ -1755,19 +1749,7 @@ function showNavLoading() {
         }, 120);
     }
 
-    // 2. Indikator Loading pada Link Tab Browser (Judul Halaman Web & Favicon Link)
-    if (!window._origDocumentTitle) {
-        window._origDocumentTitle = document.title;
-    }
-    const appName = (typeof systemConfig !== 'undefined' && systemConfig.namaKomplek) ? systemConfig.namaKomplek : (window._origDocumentTitle || 'SIMAK');
-    document.title = '⏳ Memuat data... | ' + appName;
-
-    const favicon = document.getElementById('appFavicon');
-    if (favicon) {
-        favicon.href = LOADING_FAVICON_SVG;
-    }
-
-    // 3. Tampilkan Pop-up Tengah "Memuat data..."
+    // 2. Tampilkan Pop-up Tengah "Memuat data..."
     const overlay = document.getElementById('dbLoadingOverlay');
     if (overlay) {
         overlay.classList.remove('hidden', 'pointer-events-none');
@@ -1795,16 +1777,7 @@ function hideNavLoading() {
         }, 140);
     }
 
-    // 2. Kembalikan Judul & Favicon Link Web
-    if (window._origDocumentTitle) {
-        document.title = window._origDocumentTitle;
-    }
-    const favicon = document.getElementById('appFavicon');
-    if (favicon) {
-        favicon.href = DEFAULT_FAVICON_SVG;
-    }
-
-    // 3. Sembunyikan Pop-up Tengah
+    // 2. Sembunyikan Pop-up Tengah
     const overlay = document.getElementById('dbLoadingOverlay');
     if (overlay) {
         overlay.classList.add('opacity-0', 'pointer-events-none');
