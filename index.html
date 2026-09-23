@@ -1716,7 +1716,10 @@ function updateAppIdentityUI() {
         if (cfgAlamat) cfgAlamat.value = systemConfig.alamatKomplek || '';
         if (cfgNominal) cfgNominal.value = systemConfig.nominalIuranDefault || 20000;
 
-        document.title = `SIMAK - ${kName}`;
+        window._baseDocumentTitle = `SIMAK - ${kName}`;
+        if (!isNavFetching) {
+            document.title = window._baseDocumentTitle;
+        }
     } catch(e) {
         console.error("Error updating identity UI:", e);
     }
@@ -1729,9 +1732,15 @@ function toggleMobileMenu() {
     if (backdrop) backdrop.classList.toggle('hidden');
 }
 
+const DEFAULT_FAVICON_SVG = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230284c7'><path d='M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z'/></svg>";
+const SPINNER_CHARS = ['◜', '◝', '◞', '◟'];
+
 let navDataFetchController = null;
 let isNavFetching = false;
 let webBarProgressTimer = null;
+let titleSpinnerTimer = null;
+let titleSpinnerIdx = 0;
+let faviconSpinnerAngle = 0;
 
 function showNavLoading() {
     isNavFetching = true;
@@ -1749,7 +1758,32 @@ function showNavLoading() {
         }, 120);
     }
 
-    // 2. Tampilkan Pop-up Tengah "Memuat data..."
+    // 2. Animasi Putaran pada Web Address Bar / Tab Browser (Icon Favicon Berputar & Karakter Spinner)
+    if (!window._baseDocumentTitle) {
+        window._baseDocumentTitle = document.title.replace(/^[◜◝◞◟◐◓◑◒⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏\s]+/, '') || 'SIMAK';
+    }
+
+    if (titleSpinnerTimer) clearInterval(titleSpinnerTimer);
+    titleSpinnerIdx = 0;
+    faviconSpinnerAngle = 0;
+
+    const runSpinnerTick = () => {
+        if (!isNavFetching) return;
+        const char = SPINNER_CHARS[titleSpinnerIdx % SPINNER_CHARS.length];
+        document.title = `${char} ${window._baseDocumentTitle}`;
+        titleSpinnerIdx++;
+
+        faviconSpinnerAngle = (faviconSpinnerAngle + 45) % 360;
+        const favicon = document.getElementById('appFavicon');
+        if (favicon) {
+            favicon.href = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><g transform='rotate(${faviconSpinnerAngle} 12 12)'><circle cx='12' cy='12' r='8.5' fill='none' stroke='%230284c7' stroke-width='3.5' stroke-linecap='round' stroke-dasharray='16 24'/></g></svg>`;
+        }
+    };
+
+    runSpinnerTick();
+    titleSpinnerTimer = setInterval(runSpinnerTick, 100);
+
+    // 3. Tampilkan Pop-up Tengah "Memuat data..."
     const overlay = document.getElementById('dbLoadingOverlay');
     if (overlay) {
         overlay.classList.remove('hidden', 'pointer-events-none');
@@ -1777,7 +1811,20 @@ function hideNavLoading() {
         }, 140);
     }
 
-    // 2. Sembunyikan Pop-up Tengah
+    // 2. Hentikan Animasi Putaran & Kembalikan Judul serta Favicon Asli
+    if (titleSpinnerTimer) {
+        clearInterval(titleSpinnerTimer);
+        titleSpinnerTimer = null;
+    }
+    if (window._baseDocumentTitle) {
+        document.title = window._baseDocumentTitle;
+    }
+    const favicon = document.getElementById('appFavicon');
+    if (favicon) {
+        favicon.href = DEFAULT_FAVICON_SVG;
+    }
+
+    // 3. Sembunyikan Pop-up Tengah
     const overlay = document.getElementById('dbLoadingOverlay');
     if (overlay) {
         overlay.classList.add('opacity-0', 'pointer-events-none');
