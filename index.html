@@ -199,7 +199,15 @@
         </header>
 
         <!-- Main Workspace Container -->
-        <main class="p-4 md:p-6 space-y-6 flex-1 max-w-7xl w-full mx-auto">
+        <main class="p-4 md:p-6 space-y-6 flex-1 max-w-7xl w-full mx-auto relative min-h-[500px]">
+
+            <!-- Indikator Loading Pengambilan Data (Hanya Muncul Tulisan Memuat Data) -->
+            <div id="dbLoadingOverlay" class="hidden absolute inset-0 z-30 bg-slate-50/70 backdrop-blur-[1px] rounded-2xl flex items-center justify-center p-4 transition-all duration-150 opacity-0 pointer-events-none">
+                <div class="inline-flex items-center space-x-2.5 px-4 py-2.5 rounded-xl bg-white shadow-sm border border-slate-200 text-slate-700">
+                    <i class="fa-solid fa-circle-notch fa-spin text-sky-600 text-sm"></i>
+                    <span class="text-sm font-medium text-slate-700">Memuat data...</span>
+                </div>
+            </div>
 
             <section id="tab-dashboard" class="tab-content space-y-6">
                 <!-- Summary KPI Cards Grid (4 Columns) -->
@@ -1709,13 +1717,117 @@ function toggleMobileMenu() {
     if (backdrop) backdrop.classList.toggle('hidden');
 }
 
-function navigateTo(path) {
-    // Ubah URL di browser tanpa reload halaman (misal: /warga, /kas, /auth, dll)
-    window.history.pushState({}, "", path);
-    handleRouting();
+let navDataFetchController = null;
+let isNavFetching = false;
+
+function showNavLoading() {
+    const overlay = document.getElementById('dbLoadingOverlay');
+    if (overlay) {
+        overlay.classList.remove('hidden', 'pointer-events-none');
+        setTimeout(() => {
+            overlay.classList.remove('opacity-0');
+        }, 10);
+    }
 }
 
-function handleRouting() {
+function hideNavLoading() {
+    const overlay = document.getElementById('dbLoadingOverlay');
+    if (overlay) {
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+        }, 150);
+    }
+}
+
+async function executeNavWithDatabaseFetch(tabId) {
+    if (tabId === 'config' && activeAdminSession === null) {
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+    }
+
+    // Tutup mobile menu segera jika terbuka
+    const sidebar = document.getElementById('mainSidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 768) {
+        sidebar.classList.add('-translate-x-full');
+        if (backdrop) backdrop.classList.add('hidden');
+    }
+
+    isNavFetching = true;
+    showNavLoading();
+
+    // Update style nav button di sidebar langsung
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-slate-800', 'text-white', 'font-semibold');
+        btn.classList.add('text-slate-300');
+    });
+    const activeBtn = document.getElementById('nav-' + tabId);
+    if (activeBtn) {
+        activeBtn.classList.add('bg-slate-800', 'text-white', 'font-semibold');
+        activeBtn.classList.remove('text-slate-300');
+    }
+
+    // Batalkan request navigasi sebelumnya jika ada
+    if (navDataFetchController) {
+        navDataFetchController.abort();
+    }
+    navDataFetchController = new AbortController();
+
+    const minDelay = new Promise(resolve => setTimeout(resolve, 350));
+    const fetchPromise = fetch('/api/supabase/pull', { signal: navDataFetchController.signal })
+        .then(res => res.json())
+        .catch(err => {
+            if (err.name !== 'AbortError') {
+                console.warn('Gagal memuat database saat navigasi:', err);
+            }
+            return null;
+        });
+
+    try {
+        const [result] = await Promise.all([fetchPromise, minDelay]);
+
+        if (result && result.success && result.data) {
+            const d = result.data;
+            let updated = false;
+
+            if (d.config) { systemConfig = d.config; updated = true; }
+            if (d.admins && Array.isArray(d.admins)) { adminUsers = d.admins; updated = true; }
+            if (d.warga && Array.isArray(d.warga)) { wargaData = d.warga; updated = true; }
+            if (d.iuran && typeof d.iuran === 'object') { iuranData = d.iuran; updated = true; }
+            if (d.kas && Array.isArray(d.kas)) { kasData = d.kas; updated = true; }
+            if (d.pengumuman && Array.isArray(d.pengumuman)) { pengumumanData = d.pengumuman; updated = true; }
+            if (d.kontak && Array.isArray(d.kontak)) { kontakData = d.kontak; updated = true; }
+
+            if (updated) {
+                saveLocalStorageData(true);
+                updateAppIdentityUI();
+            }
+
+            const badgeText = document.getElementById('supabaseBadgeText');
+            if (badgeText) badgeText.textContent = 'Terhubung';
+            const lastSyncEl = document.getElementById('sbLastSyncTime');
+            if (lastSyncEl) {
+                const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                lastSyncEl.textContent = `Hari ini, ${nowStr}`;
+            }
+        }
+    } catch (err) {
+        console.warn('Nav database fetch error:', err);
+    } finally {
+        isNavFetching = false;
+        hideNavLoading();
+        switchTabWithoutPush(tabId);
+    }
+}
+
+async function navigateTo(path) {
+    // Ubah URL di browser tanpa reload halaman (misal: /warga, /kas, /auth, dll)
+    window.history.pushState({}, "", path);
+    await handleRouting(true);
+}
+
+async function handleRouting(isUserNav = false) {
     let path = window.location.pathname;
     
     // Fallback jika dibuka dari file lokal (file://) atau root kosong
@@ -1739,16 +1851,20 @@ function handleRouting() {
     // Pemetaan route ke tab aplikasi
     const validTabs = ['dashboard', 'warga', 'iuran', 'kas', 'pengumuman', 'kontak', 'config'];
     if (validTabs.includes(path)) {
-        switchTabWithoutPush(path);
+        if (isUserNav) {
+            await executeNavWithDatabaseFetch(path);
+        } else {
+            switchTabWithoutPush(path);
+        }
     } else {
         // Jika URL tidak dikenali, redirect ke /dashboard
-        navigateTo('/dashboard');
+        await navigateTo('/dashboard');
     }
 }
 
 // Event listener ketika tombol Back / Forward di browser diklik
-window.onpopstate = function() {
-    handleRouting();
+window.onpopstate = async function() {
+    await handleRouting(true);
 };
 
 // Fungsi internal untuk mengganti tampilan tab tanpa mengubah URL pushState (digunakan oleh router)
