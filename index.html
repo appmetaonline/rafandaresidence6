@@ -1113,18 +1113,74 @@
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
                     <input type="password" id="adminNewPass" required minlength="4" placeholder="••••••••" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
-                <div>
+                    <div>
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Role / Jabatan</label>
                     <select id="adminNewRole" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <option value="Pengurus RT">Pengurus RT</option>
-                        <option value="Bendahara">Bendahara Kas</option>
+                        <option value="Bendahara">Bendahara (Hanya Uang Kas & Ceklis Iuran)</option>
                         <option value="Sekretaris">Sekretaris</option>
-                        <option value="Super Admin">Super Admin</option>
+                        <option value="Super Admin">Super Admin (Akses Penuh & Konfigurasi)</option>
                     </select>
                 </div>
                 <div class="flex justify-end space-x-2 pt-3">
                     <button type="button" onclick="closeModalAddAdmin()" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-200">Batal</button>
                     <button type="submit" class="px-5 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl hover:bg-indigo-700 shadow-md">Simpan Admin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 6: EDIT AKUN ADMIN -->
+    <div id="modalEditAdmin" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b pb-3">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm shadow-sm">
+                        <i class="fa-solid fa-user-pen"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base">Edit Akun Admin / Pengurus</h3>
+                        <p class="text-[11px] text-slate-500">Perbarui profil, username, password, atau hak akses akun.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModalEditAdmin()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="formEditAdmin" onsubmit="saveEditAdminUser(event)" class="space-y-3">
+                <input type="hidden" id="adminEditOriginalUsername">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama Lengkap Pengurus</label>
+                    <input type="text" id="adminEditName" required placeholder="Contoh: Pak Sekretaris RT" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Username Admin</label>
+                    <input type="text" id="adminEditUsername" required placeholder="username_admin" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase">Password</label>
+                        <button type="button" onclick="toggleEditAdminPassVisibility()" class="text-[11px] text-amber-600 hover:text-amber-700 flex items-center space-x-1 font-medium cursor-pointer">
+                            <i id="toggleEditAdminPassIcon" class="fa-solid fa-eye text-xs"></i>
+                            <span id="toggleEditAdminPassText">Lihat Password</span>
+                        </button>
+                    </div>
+                    <input type="password" id="adminEditPassword" required minlength="4" placeholder="••••••••" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    <p class="text-[10px] text-slate-400 mt-1">Minimal 4 karakter. Anda dapat mengubah password akun ini kapan saja.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Role / Hak Akses</label>
+                    <select id="adminEditRole" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <option value="Pengurus RT">Pengurus RT</option>
+                        <option value="Bendahara">Bendahara (Hanya Uang Kas & Ceklis Iuran)</option>
+                        <option value="Sekretaris">Sekretaris</option>
+                        <option value="Super Admin">Super Admin (Akses Penuh & Konfigurasi)</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModalEditAdmin()" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-200 cursor-pointer">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-amber-600/20 cursor-pointer flex items-center space-x-1.5 transition-all">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Simpan Perubahan</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -4064,22 +4120,47 @@ function renderAdminUsersTable() {
         return;
     }
 
-    tbody.innerHTML = adminUsers.map((a, idx) => `
+    tbody.innerHTML = adminUsers.map((a) => {
+        const isMainAdmin = a.username === 'admin';
+        const roleBadge = a.role === 'Super Admin'
+            ? 'bg-purple-100 text-purple-700 border border-purple-200'
+            : a.role === 'Bendahara'
+                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                : 'bg-slate-100 text-slate-700 border border-slate-200';
+
+        const safeUser = (a.username || '').replace(/'/g, "\\'");
+
+        return `
         <tr class="hover:bg-slate-50 transition-colors">
-            <td class="px-4 py-3 font-semibold text-slate-800">${a.username}</td>
+            <td class="px-4 py-3 font-semibold text-slate-800">
+                <div class="flex items-center space-x-2">
+                    <span>${a.username}</span>
+                    ${isMainAdmin ? '<span class="text-[9px] px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded font-bold border border-purple-200">Bawaan Utama</span>' : ''}
+                </div>
+            </td>
             <td class="px-4 py-3 text-slate-700">${a.name}</td>
             <td class="px-4 py-3">
-                <span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${a.role === 'Super Admin' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}">
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${roleBadge}">
                     ${a.role || 'Admin'}
                 </span>
             </td>
             <td class="px-4 py-3 text-center">
-                ${a.username === 'admin' ? '<span class="text-[10px] text-slate-400 font-medium">Bawaan Utama</span>' : `
-                    <button onclick="deleteAdminUser('${a.username}')" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg text-xs cursor-pointer"><i class="fa-solid fa-trash-can"></i> Hapus</button>
-                `}
+                <div class="flex items-center justify-center space-x-1.5">
+                    <button onclick="openModalEditAdmin('${safeUser}')" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 rounded-lg text-xs font-semibold cursor-pointer transition-colors flex items-center space-x-1" title="Edit Akun Admin">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>Edit</span>
+                    </button>
+                    ${isMainAdmin ? '' : `
+                        <button onclick="deleteAdminUser('${safeUser}')" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 rounded-lg text-xs font-semibold cursor-pointer transition-colors flex items-center space-x-1" title="Hapus Akun">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>Hapus</span>
+                        </button>
+                    `}
+                </div>
             </td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function openModalAddAdmin() {
@@ -4110,6 +4191,120 @@ function saveNewAdminUser(e) {
 
     // Tampilkan pop-up dialog dengan format kalimat "data berhasil disimpan"
     showSuccessModal('data berhasil disimpan');
+}
+
+function openModalEditAdmin(username) {
+    const user = adminUsers.find(a => a.username === username);
+    if (!user) {
+        showToastNotification('Akun admin tidak ditemukan.', 'error');
+        return;
+    }
+
+    document.getElementById('adminEditOriginalUsername').value = user.username;
+    document.getElementById('adminEditName').value = user.name || '';
+    document.getElementById('adminEditUsername').value = user.username || '';
+    document.getElementById('adminEditPassword').value = user.password || '';
+
+    const roleSelect = document.getElementById('adminEditRole');
+    if (roleSelect) {
+        roleSelect.value = user.role || 'Pengurus RT';
+        // Khusus akun utama 'admin', jaga agar tetap berstatus Super Admin
+        if (user.username === 'admin') {
+            roleSelect.value = 'Super Admin';
+        }
+    }
+
+    // Reset password visibility
+    const passInput = document.getElementById('adminEditPassword');
+    if (passInput) passInput.type = 'password';
+    const passIcon = document.getElementById('toggleEditAdminPassIcon');
+    if (passIcon) passIcon.className = 'fa-solid fa-eye text-xs';
+    const passText = document.getElementById('toggleEditAdminPassText');
+    if (passText) passText.textContent = 'Lihat Password';
+
+    const modal = document.getElementById('modalEditAdmin');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeModalEditAdmin() {
+    const modal = document.getElementById('modalEditAdmin');
+    if (modal) modal.classList.add('hidden');
+}
+
+function toggleEditAdminPassVisibility() {
+    const passInput = document.getElementById('adminEditPassword');
+    const passIcon = document.getElementById('toggleEditAdminPassIcon');
+    const passText = document.getElementById('toggleEditAdminPassText');
+    if (!passInput) return;
+    if (passInput.type === 'password') {
+        passInput.type = 'text';
+        if (passIcon) passIcon.className = 'fa-solid fa-eye-slash text-xs';
+        if (passText) passText.textContent = 'Sembunyikan';
+    } else {
+        passInput.type = 'password';
+        if (passIcon) passIcon.className = 'fa-solid fa-eye text-xs';
+        if (passText) passText.textContent = 'Lihat Password';
+    }
+}
+
+function saveEditAdminUser(e) {
+    e.preventDefault();
+    const originalUsername = document.getElementById('adminEditOriginalUsername').value.trim();
+    const name = document.getElementById('adminEditName').value.trim();
+    const newUsername = document.getElementById('adminEditUsername').value.trim();
+    const password = document.getElementById('adminEditPassword').value.trim();
+    let role = document.getElementById('adminEditRole').value;
+
+    if (!name || !newUsername || !password) {
+        showToastNotification('Mohon lengkapi seluruh kolom formulir akun admin.', 'warning');
+        return;
+    }
+
+    const targetIndex = adminUsers.findIndex(a => a.username === originalUsername);
+    if (targetIndex === -1) {
+        showToastNotification('Akun admin yang ingin diedit tidak ditemukan.', 'error');
+        return;
+    }
+
+    // Jika username diubah, pastikan tidak bentrok dengan akun lain
+    if (newUsername.toLowerCase() !== originalUsername.toLowerCase()) {
+        const usernameExists = adminUsers.some((a, idx) => idx !== targetIndex && a.username.toLowerCase() === newUsername.toLowerCase());
+        if (usernameExists) {
+            showToastNotification('Username baru sudah digunakan oleh akun lain. Silakan pilih username lain.', 'error');
+            return;
+        }
+    }
+
+    // Jika akun utama 'admin', pastikan tetap Super Admin agar akses sistem terjaga
+    if (originalUsername === 'admin') {
+        role = 'Super Admin';
+    }
+
+    // Update data admin di memori
+    adminUsers[targetIndex] = {
+        username: newUsername,
+        password: password,
+        name: name,
+        role: role
+    };
+
+    // Jika akun yang sedang aktif login diedit, perbarui juga activeAdminSession
+    if (activeAdminSession && (activeAdminSession.username === originalUsername || activeAdminSession.username === newUsername)) {
+        activeAdminSession.username = newUsername;
+        activeAdminSession.name = name;
+        activeAdminSession.role = role;
+        activeAdminSession.password = password;
+        sessionStorage.setItem('SIMAK_ACTIVE_ADMIN', JSON.stringify(activeAdminSession));
+        updateRoleUI();
+    }
+
+    saveLocalStorageData();
+    closeModalEditAdmin();
+    renderAdminUsersTable();
+
+    // Tampilkan pop-up dialog dengan format kalimat "data berhasil disimpan"
+    showSuccessModal('data berhasil disimpan');
+    showToastNotification(`Data akun admin @${newUsername} berhasil diperbarui.`, 'success');
 }
 
 function deleteAdminUser(username) {
