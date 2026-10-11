@@ -176,8 +176,8 @@
                 <span>Kontak Darurat</span>
             </button>
 
-            <!-- Menu Konfigurasi Admin (Admin Only) -->
-            <button onclick="navigateTo('/config')" id="nav-config" class="nav-btn admin-only hidden w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-slate-300 hover:bg-slate-800 hover:text-white">
+            <!-- Menu Konfigurasi Admin (Hanya Super Admin) -->
+            <button onclick="navigateTo('/config')" id="nav-config" class="nav-btn super-admin-only hidden w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-slate-300 hover:bg-slate-800 hover:text-white">
                 <i class="fa-solid fa-gears w-5 text-center text-purple-400"></i>
                 <span>Konfigurasi Admin</span>
             </button>
@@ -194,8 +194,8 @@
                 <h2 id="pageTitle" class="text-lg md:text-xl font-bold text-slate-800 tracking-tight">Dashboard</h2>
             </div>
             <div class="flex items-center space-x-2 sm:space-x-3">
-                <!-- Supabase Cloud Badge (Hanya muncul untuk Admin) -->
-                <button id="supabaseStatusBadge" onclick="goToSupabaseTab()" title="Status Supabase Cloud Database (Klik untuk mengelola)" class="admin-only hidden cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 shadow-2xs">
+                <!-- Supabase Cloud Badge (Hanya muncul untuk Super Admin, tidak boleh muncul untuk Bendahara) -->
+                <button id="supabaseStatusBadge" onclick="goToSupabaseTab()" title="Status Supabase Cloud Database (Klik untuk mengelola)" style="display: none;" class="super-admin-only hidden cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 shadow-2xs">
                     <span id="supabaseBadgeDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="hidden sm:inline font-semibold">Supabase</span>
                     <span id="supabaseBadgeText" class="text-[11px] font-medium">Terhubung</span>
@@ -319,7 +319,7 @@
                                 <option value="ALL">Semua Blok Rumah (A - F)</option>
                             </select>
                         </div>
-                        <button onclick="openModalWarga()" class="admin-only hidden bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-indigo-600/20 flex items-center justify-center space-x-2 transition-all">
+                        <button onclick="openModalWarga()" class="warga-admin-only hidden bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-indigo-600/20 flex items-center justify-center space-x-2 transition-all">
                             <i class="fa-solid fa-user-plus text-xs"></i>
                             <span>Tambah Warga Baru</span>
                         </button>
@@ -335,7 +335,7 @@
                                     <th class="px-4 py-3">Status Hunian</th>
                                     <th class="px-4 py-3">Anggota Keluarga</th>
                                     <th class="px-4 py-3">Kontak WhatsApp</th>
-                                    <th class="px-4 py-3 text-center admin-only">Aksi</th>
+                                    <th class="px-4 py-3 text-center warga-admin-only hidden">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="wargaTableBody" class="divide-y divide-slate-200 bg-white">
@@ -422,7 +422,7 @@
                             <h3 class="font-bold text-slate-800 text-lg">Pencatatan Transaksi Kas</h3>
                             <p class="text-xs text-slate-500">Kelola rincian pemasukan dan pengeluaran komplek</p>
                         </div>
-                        <button onclick="openModalKas()" class="admin-only hidden bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-amber-500/20 flex items-center justify-center space-x-2 transition-all">
+                        <button onclick="openModalKas()" class="kas-admin-only hidden bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-amber-500/20 flex items-center justify-center space-x-2 transition-all">
                             <i class="fa-solid fa-plus text-xs"></i>
                             <span>Tambah Transaksi Kas</span>
                         </button>
@@ -460,7 +460,7 @@
                                     <th class="px-4 py-3">Kategori</th>
                                     <th class="px-4 py-3">Keterangan</th>
                                     <th class="px-4 py-3 text-right">Nominal</th>
-                                    <th class="px-4 py-3 text-center admin-only">Aksi</th>
+                                    <th class="px-4 py-3 text-center kas-admin-only hidden">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="kasTableBody" class="divide-y divide-slate-200 bg-white">
@@ -483,7 +483,7 @@
                         <h3 class="font-bold text-slate-800 text-lg">Papan Pengumuman Warga</h3>
                         <p class="text-xs text-slate-500">Informasi kegiatan, kerja bakti, dan pemberitahuan umum komplek</p>
                     </div>
-                    <button onclick="openModalPengumuman()" class="admin-only hidden bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-rose-600/20 flex items-center justify-center space-x-2 transition-all">
+                    <button onclick="openModalPengumuman()" class="pengumuman-admin-only hidden bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-rose-600/20 flex items-center justify-center space-x-2 transition-all">
                         <i class="fa-solid fa-bullhorn text-xs"></i>
                         <span>Buat Pengumuman Baru</span>
                     </button>
@@ -500,7 +500,7 @@
                         <h3 class="font-bold text-slate-800 text-lg">Kontak Darurat</h3>
                         <p class="text-xs text-slate-500">Daftar kontak instansi penting & pengurus yang siap dihubungi kapan saja</p>
                     </div>
-                    <button onclick="openModalKontak()" class="admin-only hidden bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-teal-600/20 flex items-center justify-center space-x-2 transition-all">
+                    <button onclick="openModalKontak()" class="kontak-admin-only hidden bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-teal-600/20 flex items-center justify-center space-x-2 transition-all">
                         <i class="fa-solid fa-plus text-xs"></i>
                         <span>Tambah Kontak Darurat</span>
                     </button>
@@ -1082,7 +1082,7 @@
 
                 <div class="flex items-center space-x-2 text-[11px] text-emerald-800 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200/80">
                     <i class="fa-solid fa-cloud-arrow-up text-emerald-600 text-xs shrink-0"></i>
-                    <span>Data kontak darurat ini otomatis tersimpan di database <strong>Supabase Cloud</strong>.</span>
+                    <span>Data kontak darurat ini otomatis tersimpan di database sistem.</span>
                 </div>
 
                 <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
@@ -1136,6 +1136,47 @@
 let currentActiveYear = 2026;
 let chartInstance = null;
 let activeAdminSession = null; // Menyimpan data sesi login admin
+
+// Role & Permission Helpers
+function isSuperAdmin() {
+    if (!activeAdminSession) return false;
+    const r = (activeAdminSession.role || '').toLowerCase();
+    return r.includes('super admin') || r.includes('super_admin') || activeAdminSession.username === 'admin';
+}
+
+function isBendahara() {
+    if (!activeAdminSession) return false;
+    const r = (activeAdminSession.role || '').toLowerCase();
+    return r.includes('bendahara') || activeAdminSession.username === 'bendahara';
+}
+
+function canManageKas() {
+    return activeAdminSession !== null;
+}
+
+function canManageIuran() {
+    return activeAdminSession !== null;
+}
+
+function canManageWarga() {
+    if (isBendahara()) return false;
+    return isSuperAdmin() || (activeAdminSession && (activeAdminSession.role === 'Pengurus RT' || activeAdminSession.role === 'Sekretaris'));
+}
+
+function canManagePengumuman() {
+    if (isBendahara()) return false;
+    return isSuperAdmin() || (activeAdminSession && (activeAdminSession.role === 'Pengurus RT' || activeAdminSession.role === 'Sekretaris'));
+}
+
+function canManageKontak() {
+    if (isBendahara()) return false;
+    return isSuperAdmin() || (activeAdminSession && (activeAdminSession.role === 'Pengurus RT' || activeAdminSession.role === 'Sekretaris'));
+}
+
+function canAccessConfig() {
+    return isSuperAdmin();
+}
+
 let currentWargaPage = 1;
 const WARGA_PER_PAGE = 25;
 let currentIuranPage = 1;
@@ -1442,7 +1483,11 @@ let cachedSqlScript = '';
 function goToSupabaseTab() {
     if (!activeAdminSession) {
         openLoginModal();
-        showToastNotification('Silakan login admin untuk mengelola Supabase.', 'info');
+        showToastNotification('Silakan login admin untuk mengelola database.', 'info');
+        return;
+    }
+    if (!isSuperAdmin()) {
+        showToastNotification('Konfigurasi admin hanya tersedia pada user Super Admin.', 'warning');
         return;
     }
     navigateTo('/config');
@@ -1466,7 +1511,8 @@ async function checkSupabaseStatus(manual = false) {
     const bannerIcon = document.getElementById('sbBannerIcon');
     const sqlPreview = document.getElementById('sqlPreviewCode');
 
-    if (manual) showToastNotification('Memeriksa koneksi Supabase Cloud...', 'info');
+    // Pada user bendahara / guest, status supabase tidak boleh dimunculkan
+    if (manual && isSuperAdmin()) showToastNotification('Memeriksa koneksi Supabase Cloud...', 'info');
 
     try {
         const res = await fetch('/api/supabase/status');
@@ -1477,7 +1523,8 @@ async function checkSupabaseStatus(manual = false) {
             if (sqlPreview) sqlPreview.textContent = data.sqlScript;
         }
 
-        const adminBadgeVisibility = 'admin-only ' + (activeAdminSession ? '' : 'hidden ');
+        // Hanya tampil jika Super Admin
+        const adminBadgeVisibility = 'super-admin-only ' + (isSuperAdmin() ? '' : 'hidden ');
 
         if (data.connected) {
             if (data.tablesReady) {
@@ -1498,7 +1545,7 @@ async function checkSupabaseStatus(manual = false) {
                 }
                 if (bannerIcon) bannerIcon.className = 'fa-solid fa-circle-check text-emerald-600 mt-0.5';
                 if (bannerMsg) bannerMsg.textContent = 'Koneksi database Supabase aktif dan tabel telah terkonfigurasi dengan baik. Data otomatis tersinkron.';
-                if (manual) showToastNotification('Supabase terhubung dan tabel siap digunakan!', 'success');
+                if (manual && isSuperAdmin()) showToastNotification('Supabase terhubung dan tabel siap digunakan!', 'success');
             } else {
                 if (badge) badge.className = adminBadgeVisibility + 'cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 shadow-2xs';
                 if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
@@ -1517,7 +1564,7 @@ async function checkSupabaseStatus(manual = false) {
                 }
                 if (bannerIcon) bannerIcon.className = 'fa-solid fa-triangle-exclamation text-amber-600 mt-0.5';
                 if (bannerMsg) bannerMsg.textContent = 'Koneksi ke proyek Supabase berhasil! Namun tabel database belum dibuat. Silakan salin skrip SQL di bawah dan jalankan di SQL Editor Supabase.';
-                if (manual) showToastNotification('Koneksi Supabase OK. Silakan jalankan skrip SQL di Supabase.', 'warning');
+                if (manual && isSuperAdmin()) showToastNotification('Koneksi Supabase OK. Silakan jalankan skrip SQL di Supabase.', 'warning');
             }
 
             if (latencyEl && data.latencyMs) latencyEl.textContent = `(${data.latencyMs} ms)`;
@@ -1526,7 +1573,7 @@ async function checkSupabaseStatus(manual = false) {
         }
     } catch (err) {
         console.warn('Error checking Supabase:', err);
-        const adminBadgeVisibility = 'admin-only ' + (activeAdminSession ? '' : 'hidden ');
+        const adminBadgeVisibility = 'super-admin-only ' + (isSuperAdmin() ? '' : 'hidden ');
         if (badge) badge.className = adminBadgeVisibility + 'cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 shadow-2xs';
         if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-rose-500';
         if (badgeText) badgeText.textContent = 'Terputus';
@@ -1544,14 +1591,24 @@ async function checkSupabaseStatus(manual = false) {
         }
         if (bannerIcon) bannerIcon.className = 'fa-solid fa-triangle-exclamation text-rose-600 mt-0.5';
         if (bannerMsg) bannerMsg.textContent = 'Gagal terhubung ke Supabase: ' + err.message;
-        if (manual) showToastNotification('Koneksi Supabase gagal: ' + err.message, 'error');
+        if (manual && isSuperAdmin()) showToastNotification('Koneksi Supabase gagal: ' + err.message, 'error');
+    } finally {
+        if (badge) {
+            if (!isSuperAdmin()) {
+                badge.classList.add('hidden');
+                badge.style.display = 'none';
+            } else {
+                badge.classList.remove('hidden');
+                badge.style.display = '';
+            }
+        }
     }
 }
 
 function debouncePushToSupabase() {
     clearTimeout(supabaseSyncTimer);
     const badgeText = document.getElementById('supabaseBadgeText');
-    if (badgeText) badgeText.textContent = 'Menyimpan...';
+    if (badgeText && isSuperAdmin()) badgeText.textContent = 'Menyimpan...';
 
     supabaseSyncTimer = setTimeout(() => {
         pushDataToSupabase(false);
@@ -1587,22 +1644,34 @@ async function pushDataToSupabase(manual = false) {
         const data = await res.json();
 
         if (data.success) {
-            if (badgeText) badgeText.textContent = 'Terhubung';
+            if (badgeText && isSuperAdmin()) badgeText.textContent = 'Terhubung';
             const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             if (lastSyncEl) lastSyncEl.textContent = `Hari ini, ${nowStr}`;
-            if (manual) showToastNotification('Data berhasil disimpan ke Supabase Cloud!', 'success');
+            if (manual) {
+                if (isSuperAdmin()) {
+                    showToastNotification('Data berhasil disimpan ke Supabase Cloud!', 'success');
+                } else {
+                    showToastNotification('Data berhasil disimpan!', 'success');
+                }
+            }
         } else {
             if (data.tablesReady === false) {
-                if (badgeText) badgeText.textContent = 'Perlu Setup SQL';
-                if (manual) showToastNotification(data.message, 'warning');
+                if (badgeText && isSuperAdmin()) badgeText.textContent = 'Perlu Setup SQL';
+                if (manual) showToastNotification(isSuperAdmin() ? data.message : 'Sinkronisasi cloud memerlukan setup sistem.', 'warning');
             } else {
                 throw new Error(data.error || data.message || 'Gagal menyimpan data');
             }
         }
     } catch (err) {
         console.warn('Gagal push ke Supabase:', err);
-        if (badgeText) badgeText.textContent = 'Gagal Simpan';
-        if (manual) showToastNotification('Gagal mengirim ke Supabase: ' + err.message, 'error');
+        if (badgeText && isSuperAdmin()) badgeText.textContent = 'Gagal Simpan';
+        if (manual) {
+            if (isSuperAdmin()) {
+                showToastNotification('Gagal mengirim ke Supabase: ' + err.message, 'error');
+            } else {
+                showToastNotification('Gagal menyimpan data: ' + err.message, 'error');
+            }
+        }
     } finally {
         if (manual) hideNavLoading();
         if (manual && btn) {
@@ -1651,16 +1720,28 @@ async function pullDataFromSupabase(manual = false) {
 
                 const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 if (lastSyncEl) lastSyncEl.textContent = `Hari ini, ${nowStr}`;
-                if (manual) showToastNotification('Data berhasil ditarik dari Supabase Cloud!', 'success');
+                if (manual) {
+                    if (isSuperAdmin()) {
+                        showToastNotification('Data berhasil ditarik dari Supabase Cloud!', 'success');
+                    } else {
+                        showToastNotification('Data berhasil diperbarui!', 'success');
+                    }
+                }
             } else if (manual) {
-                showToastNotification('Data di Supabase masih kosong atau identik.', 'info');
+                showToastNotification(isSuperAdmin() ? 'Data di Supabase masih kosong atau identik.' : 'Data sudah yang terbaru.', 'info');
             }
         } else if (manual) {
-            showToastNotification(data.message || 'Tabel Supabase belum diinisialisasi.', 'warning');
+            showToastNotification(isSuperAdmin() ? (data.message || 'Tabel Supabase belum diinisialisasi.') : 'Data cloud belum siap.', 'warning');
         }
     } catch (err) {
         console.warn('Gagal pull dari Supabase:', err);
-        if (manual) showToastNotification('Gagal menarik data dari Supabase: ' + err.message, 'error');
+        if (manual) {
+            if (isSuperAdmin()) {
+                showToastNotification('Gagal menarik data dari Supabase: ' + err.message, 'error');
+            } else {
+                showToastNotification('Gagal memperbarui data: ' + err.message, 'error');
+            }
+        }
     } finally {
         if (manual) hideNavLoading();
         if (manual && btn) {
@@ -1897,9 +1978,15 @@ async function fetchAndSyncFromDatabase(minDelayMs = 300) {
 }
 
 async function executeNavWithDatabaseFetch(tabId) {
-    if (tabId === 'config' && activeAdminSession === null) {
-        if (typeof openLoginModal === 'function') openLoginModal();
-        return;
+    if (tabId === 'config') {
+        if (activeAdminSession === null) {
+            if (typeof openLoginModal === 'function') openLoginModal();
+            return;
+        }
+        if (!isSuperAdmin()) {
+            showToastNotification('Konfigurasi admin hanya tersedia pada user Super Admin.', 'warning');
+            return;
+        }
     }
 
     // Tutup mobile menu segera jika terbuka
@@ -1960,6 +2047,20 @@ async function handleRouting(isUserNav = false) {
         return;
     }
 
+    // Cek hak akses ke config: hanya Super Admin
+    if (path === 'config') {
+        if (!activeAdminSession) {
+            if (typeof openLoginModal === 'function') openLoginModal();
+            switchTabWithoutPush('dashboard');
+            return;
+        }
+        if (!isSuperAdmin()) {
+            showToastNotification('Konfigurasi admin hanya tersedia pada user Super Admin.', 'warning');
+            await navigateTo('/dashboard');
+            return;
+        }
+    }
+
     // Pemetaan route ke tab aplikasi
     const validTabs = ['dashboard', 'warga', 'iuran', 'kas', 'pengumuman', 'kontak', 'config'];
     if (validTabs.includes(path)) {
@@ -1982,9 +2083,16 @@ window.onpopstate = async function() {
 // Fungsi internal untuk mengganti tampilan tab tanpa mengubah URL pushState (digunakan oleh router)
 function switchTabWithoutPush(tabId) {
     try {
-        if (tabId === 'config' && activeAdminSession === null) {
-            if (typeof openLoginModal === 'function') openLoginModal();
-            return;
+        if (tabId === 'config') {
+            if (activeAdminSession === null) {
+                if (typeof openLoginModal === 'function') openLoginModal();
+                return;
+            }
+            if (!isSuperAdmin()) {
+                showToastNotification('Konfigurasi admin hanya tersedia pada user Super Admin.', 'warning');
+                switchTabWithoutPush('dashboard');
+                return;
+            }
         }
 
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -2135,14 +2243,17 @@ function handleLogout() {
 
 function updateRoleUI() {
     const isLoggedIn = activeAdminSession !== null;
+    const isSuper = isSuperAdmin();
+    const isBend = isBendahara();
     const topbarAuth = document.getElementById('topbarAuthContainer');
 
     if (topbarAuth) {
         if (isLoggedIn) {
             topbarAuth.innerHTML = `
-                <div class="flex items-center space-x-2 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
+                <div class="flex items-center space-x-1.5 sm:space-x-2 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span class="text-xs font-semibold text-indigo-900 truncate max-w-[100px] sm:max-w-none">${activeAdminSession.name || activeAdminSession.username}</span>
+                    <span class="text-xs font-semibold text-indigo-900 truncate max-w-[90px] sm:max-w-none">${activeAdminSession.name || activeAdminSession.username}</span>
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${isSuper ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-800'}">${activeAdminSession.role || 'Admin'}</span>
                 </div>
                 <button onclick="handleLogout()" title="Keluar dari Admin" class="bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold px-2.5 py-1.5 rounded-xl border border-rose-200 transition-colors flex items-center space-x-1 cursor-pointer">
                     <i class="fa-solid fa-right-from-bracket"></i>
@@ -2171,6 +2282,65 @@ function updateRoleUI() {
         }
     }
 
+    // 1. Konfigurasi Admin di Sidebar (Hanya tersedia untuk Super Admin)
+    const navConfig = document.getElementById('nav-config');
+    if (navConfig) {
+        if (isSuper) {
+            navConfig.classList.remove('hidden');
+        } else {
+            navConfig.classList.add('hidden');
+        }
+    }
+
+    // 2. Supabase Status Badge (TIDAK BOLEH MUNCUL PADA BENDAHARA, HANYA SUPER ADMIN)
+    const sbBadge = document.getElementById('supabaseStatusBadge');
+    if (sbBadge) {
+        if (isSuper) {
+            sbBadge.classList.remove('hidden');
+            sbBadge.style.display = '';
+        } else {
+            sbBadge.classList.add('hidden');
+            sbBadge.style.display = 'none';
+        }
+    }
+
+    // 3. Hak Akses Kas (Super Admin & Bendahara)
+    document.querySelectorAll('.kas-admin-only').forEach(el => {
+        if (canManageKas()) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    });
+
+    // 4. Hak Akses Warga (Hanya Super Admin, Bukan Bendahara)
+    document.querySelectorAll('.warga-admin-only').forEach(el => {
+        if (canManageWarga()) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    });
+
+    // 5. Hak Akses Pengumuman (Hanya Super Admin, Bukan Bendahara)
+    document.querySelectorAll('.pengumuman-admin-only').forEach(el => {
+        if (canManagePengumuman()) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    });
+
+    // 6. Hak Akses Kontak (Hanya Super Admin, Bukan Bendahara)
+    document.querySelectorAll('.kontak-admin-only').forEach(el => {
+        if (canManageKontak()) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    });
+
+    // 7. Elemen admin umum lainnya (fallback)
     document.querySelectorAll('.admin-only').forEach(el => {
         if (isLoggedIn) {
             el.classList.remove('hidden');
@@ -2179,11 +2349,17 @@ function updateRoleUI() {
         }
     });
 
+    // Re-render tab yang aktif
     const activeTab = document.querySelector('.tab-content:not(.hidden)');
     if (activeTab) {
         const tabId = activeTab.id.replace('tab-', '');
+        if (tabId === 'config' && !isSuper) {
+            navigateTo('/dashboard');
+            return;
+        }
         if (tabId === 'warga' && typeof renderWargaTable === 'function') renderWargaTable();
         if (tabId === 'kas' && typeof renderKasTable === 'function') renderKasTable();
+        if (tabId === 'iuran' && typeof renderIuranTable === 'function') renderIuranTable();
         if (tabId === 'pengumuman' && typeof renderPengumumanGrid === 'function') renderPengumumanGrid();
         if (tabId === 'kontak' && typeof renderKontakGrid === 'function') renderKontakGrid();
     }
@@ -2516,8 +2692,8 @@ function renderWargaTable() {
     if (currentWargaPage > totalPages) currentWargaPage = totalPages;
     if (currentWargaPage < 1) currentWargaPage = 1;
 
-    const isLoggedIn = activeAdminSession !== null;
-    const colSpanCount = isLoggedIn ? 7 : 6;
+    const canEdit = canManageWarga();
+    const colSpanCount = canEdit ? 7 : 6;
 
     if (totalItems === 0) {
         tbody.innerHTML = `<tr><td colspan="${colSpanCount}" class="px-4 py-8 text-center text-slate-400 text-xs">Tidak ada data warga yang sesuai.</td></tr>`;
@@ -2569,10 +2745,12 @@ function renderWargaTable() {
             </td>
             <td class="px-4 py-3 text-slate-600">${displayAnggota}</td>
             <td class="px-4 py-3">${displayTelp}</td>
-            <td class="px-4 py-3 text-center space-x-1 ${isLoggedIn ? '' : 'hidden'} admin-only">
+            ${canEdit ? `
+            <td class="px-4 py-3 text-center space-x-1 warga-admin-only">
                 <button onclick="editWarga('${w.id}')" title="Edit Data Warga" class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer"><i class="fa-solid fa-pen-to-square"></i></button>
                 <button onclick="deleteWarga('${w.id}')" title="Hapus Data Warga" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
             </td>
+            ` : ''}
         </tr>
         `;
     }).join('');
@@ -2697,6 +2875,16 @@ function onWargaStatusChange() {
 }
 
 function openModalWarga(id = null) {
+    if (!canManageWarga()) {
+        if (isBendahara()) {
+            showToastNotification('User Bendahara hanya berwenang untuk pencatatan uang kas dan ceklis iuran.', 'warning');
+        } else {
+            openLoginModal();
+            showToastNotification('Hanya admin yang dapat mengelola data warga.', 'warning');
+        }
+        return;
+    }
+
     document.getElementById('formWarga').reset();
     document.getElementById('wargaId').value = '';
     document.getElementById('modalWargaTitle').textContent = id ? 'Edit Data Warga' : 'Tambah Data Warga';
@@ -2725,6 +2913,16 @@ function closeModalWarga() {
 
 function saveWarga(e) {
     e.preventDefault();
+    if (!canManageWarga()) {
+        if (isBendahara()) {
+            showToastNotification('User Bendahara hanya berwenang untuk pencatatan uang kas dan ceklis iuran.', 'warning');
+        } else {
+            openLoginModal();
+            showToastNotification('Hanya admin yang dapat mengelola data warga.', 'warning');
+        }
+        return;
+    }
+
     const id = document.getElementById('wargaId').value;
     const nama = document.getElementById('wargaNama').value.trim();
     const blok = document.getElementById('wargaBlok').value.trim();
@@ -2758,18 +2956,26 @@ function saveWarga(e) {
 }
 
 function editWarga(id) {
-    if (!activeAdminSession) {
-        openLoginModal();
-        showToastNotification('Hanya user admin yang dapat mengedit data warga.', 'warning');
+    if (!canManageWarga()) {
+        if (isBendahara()) {
+            showToastNotification('User Bendahara hanya berwenang untuk pencatatan uang kas dan ceklis iuran.', 'warning');
+        } else {
+            openLoginModal();
+            showToastNotification('Hanya admin yang dapat mengelola data warga.', 'warning');
+        }
         return;
     }
     openModalWarga(id);
 }
 
 function deleteWarga(id) {
-    if (!activeAdminSession) {
-        openLoginModal();
-        showToastNotification('Hanya user admin yang dapat menghapus data warga.', 'warning');
+    if (!canManageWarga()) {
+        if (isBendahara()) {
+            showToastNotification('User Bendahara hanya berwenang untuk pencatatan uang kas dan ceklis iuran.', 'warning');
+        } else {
+            openLoginModal();
+            showToastNotification('Hanya admin yang dapat mengelola data warga.', 'warning');
+        }
         return;
     }
     const w = wargaData.find(item => item.id === id);
@@ -3010,8 +3216,8 @@ function renderKasTable() {
     if (currentKasPage > totalPages) currentKasPage = totalPages;
     if (currentKasPage < 1) currentKasPage = 1;
 
-    const isLoggedIn = activeAdminSession !== null;
-    const colspan = isLoggedIn ? 6 : 5;
+    const canEdit = canManageKas();
+    const colspan = canEdit ? 6 : 5;
 
     if (totalItems === 0) {
         tbody.innerHTML = `<tr><td colspan="${colspan}" class="px-4 py-8 text-center text-slate-400 text-xs">Belum ada transaksi kas untuk periode ini.</td></tr>`;
@@ -3038,10 +3244,12 @@ function renderKasTable() {
             <td class="px-4 py-3 text-right font-bold ${k.tipe === 'masuk' ? 'text-emerald-600' : 'text-rose-600'}">
                 Rp ${Number(k.nominal).toLocaleString('id-ID')}
             </td>
-            <td class="px-4 py-3 text-center space-x-1 ${isLoggedIn ? '' : 'hidden'} admin-only">
+            ${canEdit ? `
+            <td class="px-4 py-3 text-center space-x-1 kas-admin-only">
                 <button onclick="editKas('${k.id}')" title="Edit Transaksi" class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer"><i class="fa-solid fa-pen-to-square"></i></button>
                 <button onclick="deleteKas('${k.id}')" title="Hapus Transaksi" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
             </td>
+            ` : ''}
         </tr>
     `).join('');
 
@@ -3252,7 +3460,7 @@ function renderPengumumanGrid() {
         return;
     }
 
-    const isLoggedIn = activeAdminSession !== null;
+    const canEdit = canManagePengumuman();
     grid.innerHTML = pengumumanData.map(p => `
         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
             <div class="space-y-2">
@@ -3263,8 +3471,8 @@ function renderPengumumanGrid() {
                 <h4 class="font-bold text-slate-800 text-base leading-snug">${p.judul}</h4>
                 <p class="text-xs text-slate-600 leading-relaxed whitespace-pre-line">${p.isi}</p>
             </div>
-            ${isLoggedIn ? `
-            <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2 admin-only">
+            ${canEdit ? `
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2 pengumuman-admin-only">
                 <button onclick="editPengumuman('${p.id}')" class="text-xs text-indigo-600 font-semibold px-2.5 py-1 rounded-lg hover:bg-indigo-50 transition-colors cursor-pointer"><i class="fa-solid fa-pen mr-1"></i> Edit</button>
                 <button onclick="deletePengumuman('${p.id}')" class="text-xs text-rose-600 font-semibold px-2.5 py-1 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"><i class="fa-solid fa-trash mr-1"></i> Hapus</button>
             </div>
@@ -3274,9 +3482,13 @@ function renderPengumumanGrid() {
 }
 
 function openModalPengumuman(id = null) {
-    if (!activeAdminSession) {
-        openLoginModal();
-        showToastNotification('Fitur tambah/edit pengumuman hanya dapat diakses oleh user admin.', 'warning');
+    if (!canManagePengumuman()) {
+        if (isBendahara()) {
+            showToastNotification('User Bendahara hanya berwenang untuk pencatatan uang kas dan ceklis iuran.', 'warning');
+        } else {
+            openLoginModal();
+            showToastNotification('Fitur tambah/edit pengumuman hanya dapat diakses oleh user admin.', 'warning');
+        }
         return;
     }
 
@@ -3305,9 +3517,13 @@ function closeModalPengumuman() {
 
 function savePengumuman(e) {
     e.preventDefault();
-    if (!activeAdminSession) {
-        openLoginModal();
-        showToastNotification('Aksi ditolak: Hanya user admin yang dapat menyimpan pengumuman.', 'error');
+    if (!canManagePengumuman()) {
+        if (isBendahara()) {
+            showToastNotification('User Bendahara hanya berwenang untuk pencatatan uang kas dan ceklis iuran.', 'warning');
+        } else {
+            openLoginModal();
+            showToastNotification('Aksi ditolak: Hanya user admin yang dapat menyimpan pengumuman.', 'error');
+        }
         return;
     }
 
@@ -3340,18 +3556,26 @@ function savePengumuman(e) {
 }
 
 function editPengumuman(id) { 
-    if (!activeAdminSession) {
-        openLoginModal();
-        showToastNotification('Hanya user admin yang dapat mengedit pengumuman.', 'warning');
+    if (!canManagePengumuman()) {
+        if (isBendahara()) {
+            showToastNotification('User Bendahara hanya berwenang untuk pencatatan uang kas dan ceklis iuran.', 'warning');
+        } else {
+            openLoginModal();
+            showToastNotification('Hanya user admin yang dapat mengedit pengumuman.', 'warning');
+        }
         return;
     }
     openModalPengumuman(id); 
 }
 
 function deletePengumuman(id) {
-    if (!activeAdminSession) {
-        openLoginModal();
-        showToastNotification('Hanya user admin yang dapat menghapus pengumuman.', 'warning');
+    if (!canManagePengumuman()) {
+        if (isBendahara()) {
+            showToastNotification('User Bendahara hanya berwenang untuk pencatatan uang kas dan ceklis iuran.', 'warning');
+        } else {
+            openLoginModal();
+            showToastNotification('Hanya user admin yang dapat menghapus pengumuman.', 'warning');
+        }
         return;
     }
     const p = pengumumanData.find(item => item.id === id);
@@ -3590,7 +3814,7 @@ function renderKontakGrid() {
         return;
     }
 
-    const isLoggedIn = activeAdminSession !== null;
+    const canEdit = canManageKontak();
     grid.innerHTML = kontakData.map(k => {
         const cfg = getKontakVisualConfig(k.kategori, k.nama, k.icon);
         return `
@@ -3612,9 +3836,9 @@ function renderKontakGrid() {
                     <a href="tel:${k.nomor}" title="Hubungi ${k.nama}" class="w-9 h-9 flex items-center justify-center bg-teal-50 text-teal-600 hover:bg-teal-600 hover:text-white rounded-xl transition-all shadow-2xs">
                         <i class="fa-solid fa-phone text-xs"></i>
                     </a>
-                    ${isLoggedIn ? `
-                    <button onclick="editKontak('${k.id}')" title="Edit Kontak" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl text-xs transition-colors admin-only cursor-pointer"><i class="fa-solid fa-pen"></i></button>
-                    <button onclick="deleteKontak('${k.id}')" title="Hapus Kontak" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl text-xs transition-colors admin-only cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+                    ${canEdit ? `
+                    <button onclick="editKontak('${k.id}')" title="Edit Kontak" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl text-xs transition-colors kontak-admin-only cursor-pointer"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteKontak('${k.id}')" title="Hapus Kontak" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl text-xs transition-colors kontak-admin-only cursor-pointer"><i class="fa-solid fa-trash"></i></button>
                     ` : ''}
                 </div>
             </div>
@@ -3623,9 +3847,13 @@ function renderKontakGrid() {
 }
 
 function openModalKontak(id = null) {
-    if (!activeAdminSession) {
-        openLoginModal();
-        showToastNotification('Fitur tambah/edit kontak darurat hanya dapat diakses oleh user admin.', 'warning');
+    if (!canManageKontak()) {
+        if (isBendahara()) {
+            showToastNotification('User Bendahara hanya berwenang untuk pencatatan uang kas dan ceklis iuran.', 'warning');
+        } else {
+            openLoginModal();
+            showToastNotification('Fitur tambah/edit kontak darurat hanya dapat diakses oleh user admin.', 'warning');
+        }
         return;
     }
 
@@ -3693,9 +3921,13 @@ async function deleteKontakFromSupabase(id) {
 
 function saveKontak(e) {
     e.preventDefault();
-    if (!activeAdminSession) {
-        openLoginModal();
-        showToastNotification('Aksi ditolak: Hanya user admin yang dapat menyimpan kontak darurat.', 'error');
+    if (!canManageKontak()) {
+        if (isBendahara()) {
+            showToastNotification('User Bendahara hanya berwenang untuk pencatatan uang kas dan ceklis iuran.', 'warning');
+        } else {
+            openLoginModal();
+            showToastNotification('Aksi ditolak: Hanya user admin yang dapat menyimpan kontak darurat.', 'error');
+        }
         return;
     }
 
@@ -3729,27 +3961,37 @@ function saveKontak(e) {
     // Tampilkan pop-up dialog konfirmasi bahwa data berhasil disimpan
     showSuccessModal('data berhasil disimpan');
 
-    // Otomatis simpan ke database Supabase Cloud
+    // Otomatis simpan ke database cloud
     syncKontakToSupabase(savedItem).then(res => {
         if (res && res.success) {
-            showToastNotification('Data kontak darurat otomatis tersimpan di Supabase Cloud', 'success');
+            if (isSuperAdmin()) {
+                showToastNotification('Data kontak darurat otomatis tersimpan di Supabase Cloud', 'success');
+            }
         }
     });
 }
 
 function editKontak(id) { 
-    if (!activeAdminSession) {
-        openLoginModal();
-        showToastNotification('Hanya user admin yang dapat mengedit kontak darurat.', 'warning');
+    if (!canManageKontak()) {
+        if (isBendahara()) {
+            showToastNotification('User Bendahara hanya berwenang untuk pencatatan uang kas dan ceklis iuran.', 'warning');
+        } else {
+            openLoginModal();
+            showToastNotification('Hanya user admin yang dapat mengedit kontak darurat.', 'warning');
+        }
         return;
     }
     openModalKontak(id); 
 }
 
 function deleteKontak(id) {
-    if (!activeAdminSession) {
-        openLoginModal();
-        showToastNotification('Hanya user admin yang dapat menghapus kontak darurat.', 'warning');
+    if (!canManageKontak()) {
+        if (isBendahara()) {
+            showToastNotification('User Bendahara hanya berwenang untuk pencatatan uang kas dan ceklis iuran.', 'warning');
+        } else {
+            openLoginModal();
+            showToastNotification('Hanya user admin yang dapat menghapus kontak darurat.', 'warning');
+        }
         return;
     }
     const k = kontakData.find(item => item.id === id);
