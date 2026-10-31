@@ -15,6 +15,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2canvas & jsPDF for Ceklis Iuran Export (JPG & PDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -357,7 +360,13 @@
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                         <div>
                             <h3 class="font-bold text-slate-800 text-lg">Matriks Ceklis Iuran Kas Bulanan</h3>
-                            <p class="text-xs text-slate-500">Daftar ceklis pelunasan iuran bulanan dengan nomimal kas perbulan <span id="nominalIuranBadge" class="font-semibold text-slate-700">Rp 20.000</span></p>
+                            <div class="flex items-center flex-wrap gap-2 text-xs text-slate-500 mt-1">
+                                <span>Tarif Iuran: <span id="nominalIuranBadge" class="font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-lg border border-sky-200">Rp 20.000 / bln</span></span>
+                                <button type="button" onclick="openModalTarifIuran()" class="px-2.5 py-1 bg-white hover:bg-sky-50 text-slate-700 hover:text-sky-700 border border-slate-300 hover:border-sky-300 rounded-lg text-xs font-semibold shadow-2xs cursor-pointer inline-flex items-center space-x-1.5 transition-all" title="Atur perbedaan tarif jika ada kenaikan/perubahan di bulan tertentu">
+                                    <i class="fa-solid fa-sliders text-sky-600 text-[11px]"></i>
+                                    <span>Atur Tarif Bulanan</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="flex items-center space-x-2">
                             <span class="inline-flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
@@ -379,11 +388,22 @@
                                 <option value="ALL">Semua Blok (A - F)</option>
                             </select>
                         </div>
+                        <!-- Tombol Export JPG & PDF Ceklis Iuran -->
+                        <div class="flex items-center space-x-2 shrink-0">
+                            <button type="button" onclick="openIuranExportModal('jpg')" class="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/90 text-xs font-semibold rounded-xl flex items-center space-x-1.5 transition-all cursor-pointer shadow-2xs hover:shadow-sm" title="Export Rekap Ceklis ke format Gambar JPG">
+                                <i class="fa-regular fa-image text-amber-600"></i>
+                                <span>Export JPG</span>
+                            </button>
+                            <button type="button" onclick="openIuranExportModal('pdf')" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/90 text-xs font-semibold rounded-xl flex items-center space-x-1.5 transition-all cursor-pointer shadow-2xs hover:shadow-sm" title="Export Rekap Ceklis ke format Dokumen PDF Cetak">
+                                <i class="fa-regular fa-file-pdf text-rose-600"></i>
+                                <span>Export PDF</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto rounded-xl border border-slate-200 custom-scrollbar">
-                        <table class="w-full text-xs text-left text-slate-700 min-w-[900px]">
-                            <thead class="bg-slate-100 font-semibold text-slate-600 border-b border-slate-200 text-center">
+                        <table class="w-full text-xs text-left text-slate-700 min-w-[920px]">
+                            <thead id="iuranTableHeader" class="bg-slate-100 font-semibold text-slate-600 border-b border-slate-200 text-center">
                                 <tr>
                                     <th class="px-3 py-3 text-left w-36">Warga & Blok</th>
                                     <th class="px-2 py-3 w-16">Jan</th>
@@ -398,7 +418,7 @@
                                     <th class="px-2 py-3 w-16">Okt</th>
                                     <th class="px-2 py-3 w-16">Nov</th>
                                     <th class="px-2 py-3 w-16">Des</th>
-                                    <th class="px-3 py-3 w-20">Total Lunas</th>
+                                    <th class="px-3 py-3 w-28 text-center">Total Lunas & Rp</th>
                                 </tr>
                             </thead>
                             <tbody id="iuranTableBody" class="divide-y divide-slate-200 bg-white">
@@ -561,6 +581,28 @@
                                 </button>
                             </div>
                         </form>
+
+                        <!-- Card Penyesuaian Tarif Fleksibel Bulanan -->
+                        <div class="mt-5 pt-4 border-t border-slate-100">
+                            <div class="p-4 rounded-2xl bg-gradient-to-r from-sky-50/70 via-indigo-50/30 to-white border border-sky-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center text-sm shadow-xs shrink-0">
+                                        <i class="fa-solid fa-sliders"></i>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center space-x-2">
+                                            <h4 class="font-bold text-slate-800 text-xs">Penyesuaian Tarif Iuran Fleksibel Per Bulan</h4>
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700">Tahun 2026</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 mt-0.5">Atur kenaikan atau perbedaan tarif jika nominal iuran berubah pada bulan tertentu (misal: Juli s/d Des naik jadi Rp 25.000).</p>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="openModalTarifIuran()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer shrink-0">
+                                    <i class="fa-solid fa-sliders text-xs"></i>
+                                    <span>Atur Tarif Bulanan</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -834,7 +876,8 @@
                         </div>
                     </div>
                 </div>
-            </section>
+
+                </section>
 
         </main>
 
@@ -1186,6 +1229,238 @@
         </div>
     </div>
 
+    <!-- MODAL 7: EXPORT CEKLIS IURAN (JPG / PDF) -->
+    <div id="modalExportIuran" class="fixed inset-0 bg-slate-900/70 backdrop-blur-[2px] z-[85] flex items-center justify-center p-3 sm:p-4 hidden transition-all">
+        <div class="bg-white rounded-3xl max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+            <!-- Modal Header -->
+            <div class="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-amber-50/50 via-white to-rose-50/50">
+                <div class="flex items-center space-x-3">
+                    <div class="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl shrink-0 border border-indigo-100 shadow-2xs">
+                        <i class="fa-solid fa-file-export"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base sm:text-lg">Export Ceklis Iuran Kas Bulanan</h3>
+                        <p class="text-xs text-slate-500">Unduh lembar rekapitulasi ceklis iuran kas warga ke format JPG (gambar) atau PDF (dokumen cetak).</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeIuranExportModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body: Pengaturan & Pratinjau Dokumen -->
+            <div class="p-4 sm:p-6 overflow-y-auto space-y-4 custom-scrollbar flex-1 bg-slate-50/60">
+                <!-- Baris Kontrol Pengaturan Export -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <!-- 1. Pilihan Format Berkas -->
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+                        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">1. Format Berkas</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="exportFormatOption" value="jpg" id="exportFmtJpg" checked class="peer sr-only" onchange="updateIuranExportOptions()">
+                                <div class="p-2 rounded-xl border-2 border-slate-200 peer-checked:border-amber-500 peer-checked:bg-amber-50/70 peer-checked:text-amber-900 text-center transition-all">
+                                    <i class="fa-regular fa-image text-base block mb-0.5 text-amber-600"></i>
+                                    <span class="text-xs font-bold block">Gambar JPG</span>
+                                    <span class="text-[9px] text-slate-500 block">Siap WhatsApp</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="exportFormatOption" value="pdf" id="exportFmtPdf" class="peer sr-only" onchange="updateIuranExportOptions()">
+                                <div class="p-2 rounded-xl border-2 border-slate-200 peer-checked:border-rose-500 peer-checked:bg-rose-50/70 peer-checked:text-rose-900 text-center transition-all">
+                                    <i class="fa-regular fa-file-pdf text-base block mb-0.5 text-rose-600"></i>
+                                    <span class="text-xs font-bold block">Dokumen PDF</span>
+                                    <span class="text-[9px] text-slate-500 block">A4 Landscape</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 2. Cakupan Data Warga -->
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+                        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">2. Cakupan Data</label>
+                        <div class="space-y-1.5 text-xs text-slate-700">
+                            <label class="flex items-center space-x-2 cursor-pointer p-1 hover:bg-slate-50 rounded-lg">
+                                <input type="radio" name="exportScopeOption" value="all_filtered" id="exportScopeAll" checked class="text-indigo-600 focus:ring-indigo-500" onchange="updateIuranExportPreview()">
+                                <span class="font-medium">Semua Warga Terfilter (<span id="exportTotalWargaBadge" class="font-bold text-indigo-600">0</span>)</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer p-1 hover:bg-slate-50 rounded-lg">
+                                <input type="radio" name="exportScopeOption" value="current_page" id="exportScopePage" class="text-indigo-600 focus:ring-indigo-500" onchange="updateIuranExportPreview()">
+                                <span class="font-medium">Hanya Halaman Ini (25 data)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 3. Opsi Tambahan Tampilan Dokumen -->
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+                        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">3. Opsi Tampilan</label>
+                        <div class="space-y-1 text-xs text-slate-700">
+                            <label class="flex items-center space-x-2 cursor-pointer p-1 hover:bg-slate-50 rounded-lg">
+                                <input type="checkbox" id="exportOptStats" checked class="rounded text-indigo-600 focus:ring-indigo-500" onchange="updateIuranExportPreview()">
+                                <span>Ringkasan Statistik Kas</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer p-1 hover:bg-slate-50 rounded-lg">
+                                <input type="checkbox" id="exportOptNominal" checked class="rounded text-indigo-600 focus:ring-indigo-500" onchange="updateIuranExportPreview()">
+                                <span>Kolom Total Nominal (Rp)</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer p-1 hover:bg-slate-50 rounded-lg">
+                                <input type="checkbox" id="exportOptSignatures" checked class="rounded text-indigo-600 focus:ring-indigo-500" onchange="updateIuranExportPreview()">
+                                <span>Kolom Tanda Tangan Pengurus</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bagian Pratinjau Dokumen Cetak (Live Preview) -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 p-3 sm:p-4 shadow-sm space-y-2.5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Pratinjau Lembar Rekap Ceklis</span>
+                            <span id="exportPreviewScopeInfo" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">Tahun 2026</span>
+                        </div>
+                        <div class="flex items-center space-x-2 text-[11px] text-slate-500">
+                            <span><i class="fa-solid fa-eye text-sky-500 mr-1"></i>Tampilan cetak proporsional A4 landscape</span>
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Preview Container -->
+                    <div class="overflow-x-auto max-h-[46vh] border border-slate-200 rounded-xl bg-slate-100/80 p-2 sm:p-4 custom-scrollbar">
+                        <!-- Kontainer Dokumen yang akan ditangkap html2canvas -->
+                        <div id="iuranExportPrintArea" class="bg-white text-slate-900 p-6 sm:p-8 rounded-xl shadow-sm mx-auto min-w-[960px] font-sans" style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                            <!-- Populated dynamically via updateIuranExportPreview() -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 sm:p-5 border-t border-slate-100 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center space-x-2 text-xs text-slate-600">
+                    <i class="fa-solid fa-circle-info text-sky-500 text-sm"></i>
+                    <span id="exportFormatHintText">File JPG berkualitas tinggi (skala tajam untuk dibagikan di WhatsApp warga).</span>
+                </div>
+                <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                    <button type="button" onclick="closeIuranExportModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl cursor-pointer transition-colors">
+                        Batal
+                    </button>
+                    <button type="button" id="btnExecuteIuranExport" onclick="executeIuranExport()" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-amber-600/20 cursor-pointer flex items-center space-x-2 transition-all">
+                        <i class="fa-solid fa-download text-xs" id="exportBtnIcon"></i>
+                        <span id="exportBtnText">Unduh File Gambar (JPG)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 8: ATUR TARIF IURAN BULANAN FLEKSIBEL -->
+    <div id="modalTarifIuran" class="fixed inset-0 bg-slate-900/70 backdrop-blur-[2px] z-[85] flex items-center justify-center p-3 sm:p-4 hidden transition-all">
+        <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+            <!-- Modal Header -->
+            <div class="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-sky-50 via-white to-indigo-50">
+                <div class="flex items-center space-x-3">
+                    <div class="w-11 h-11 rounded-2xl bg-sky-500/10 text-sky-600 flex items-center justify-center text-xl shrink-0 border border-sky-500/20 shadow-2xs">
+                        <i class="fa-solid fa-sliders"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base sm:text-lg">Atur Tarif Iuran Bulanan Fleksibel</h3>
+                        <p class="text-xs text-slate-500">Sesuaikan tarif per bulan Tahun <span id="modalTarifYearBadge" class="font-bold text-sky-700">2026</span> saat ada kenaikan/perubahan tarif.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModalTarifIuran()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-5 sm:p-6 overflow-y-auto space-y-4 custom-scrollbar flex-1 bg-slate-50/50">
+                <!-- Alat Cepat Kenaikan / Penyesuaian Tarif -->
+                <div class="p-4 bg-white rounded-2xl border border-sky-100 shadow-2xs space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-500 text-xs"></i>
+                            <span>Terapkan Perubahan Cepat</span>
+                        </span>
+                        <button type="button" onclick="resetTarifToDefault()" class="text-[11px] text-slate-500 hover:text-rose-600 font-medium underline cursor-pointer">
+                            Reset ke Tarif Default (Rp <span id="modalTarifDefaultText">20.000</span>)
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                        <div class="sm:col-span-5">
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Mulai Dari Bulan</label>
+                            <select id="quickTarifStartMonth" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                <option value="1">Januari</option>
+                                <option value="2">Februari</option>
+                                <option value="3">Maret</option>
+                                <option value="4">April</option>
+                                <option value="5">Mei</option>
+                                <option value="6">Juni</option>
+                                <option value="7" selected>Juli (Semester 2)</option>
+                                <option value="8">Agustus</option>
+                                <option value="9">September</option>
+                                <option value="10">Oktober</option>
+                                <option value="11">November</option>
+                                <option value="12">Desember</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-4">
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Tarif Baru (Rp)</label>
+                            <input type="number" id="quickTarifNominal" min="0" step="1000" placeholder="25000" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <button type="button" onclick="applyQuickTarifChange()" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-all cursor-pointer flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-arrow-down-wide-short text-xs"></i>
+                                <span>Terapkan</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-400 italic">Contoh: Pilih <strong>Juli</strong> dan isi <strong>25000</strong>, maka bulan Juli s/d Desember akan otomatis diset Rp 25.000.</p>
+                </div>
+
+                <!-- Grid 12 Bulan Input -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Tarif Masing-Masing Bulan (12 Bulan)</span>
+                        <span class="text-[11px] text-slate-400">Dapat diedit satu per satu</span>
+                    </div>
+
+                    <div id="modalTarifMonthsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                        <!-- Populated dynamically: 12 month input cards -->
+                    </div>
+                </div>
+
+                <!-- Kartu Ringkasan Akumulasi -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                        <div class="text-[10px] text-slate-400 font-semibold uppercase">Total Iuran 1 Tahun (Per KK)</div>
+                        <div id="modalTarifTotalYearPerKK" class="text-base font-bold text-slate-800 mt-0.5">Rp 240.000</div>
+                    </div>
+                    <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                        <div class="text-[10px] text-slate-400 font-semibold uppercase">Rata-rata Tarif Bulanan</div>
+                        <div id="modalTarifAvgMonth" class="text-base font-bold text-sky-700 mt-0.5">Rp 20.000 / bln</div>
+                    </div>
+                    <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                        <div class="text-[10px] text-slate-400 font-semibold uppercase">Potensi Kas 1 Tahun (Semua Warga)</div>
+                        <div id="modalTarifTotalPotential" class="text-base font-bold text-emerald-700 mt-0.5">Rp 0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 sm:p-5 border-t border-slate-100 bg-white flex items-center justify-between">
+                <span class="text-xs text-slate-500 hidden sm:inline">Perubahan tarif langsung tersimpan & sinkron ke Supabase.</span>
+                <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                    <button type="button" onclick="closeModalTarifIuran()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl cursor-pointer transition-colors">
+                        Batal
+                    </button>
+                    <button type="button" onclick="saveTarifBulanan()" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-sky-600/20 cursor-pointer flex items-center space-x-2 transition-all">
+                        <i class="fa-solid fa-floppy-disk text-xs"></i>
+                        <span>Simpan Tarif Bulanan</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
 // js/state.js - Global State & Data Store
 
@@ -1244,8 +1519,52 @@ const KAS_PER_PAGE = 25;
 let systemConfig = {
     namaKomplek: "Perumahan Graha SIMAK",
     alamatKomplek: "RT 05 / RW 12",
-    nominalIuranDefault: 20000
+    nominalIuranDefault: 20000,
+    tarifBulanan: {} // Format: { [tahun]: { [bulan]: nominal } }
 };
+
+// Helper Tarif Fleksibel Bulanan (Mendukung perubahan tarif di bulan tertentu)
+function getNominalIuranBulan(monthIdx, year = currentActiveYear) {
+    // monthIdx dapat berupa 0..11 (indeks 0) atau 1..12 (nomor bulan)
+    const m = (typeof monthIdx === 'number') 
+        ? ((monthIdx >= 0 && monthIdx <= 11) ? (monthIdx + 1) : monthIdx) 
+        : parseInt(monthIdx);
+    const def = Number(systemConfig?.nominalIuranDefault) || 20000;
+    
+    if (systemConfig && systemConfig.tarifBulanan) {
+        if (systemConfig.tarifBulanan[year] && systemConfig.tarifBulanan[year][m] !== undefined) {
+            const val = Number(systemConfig.tarifBulanan[year][m]);
+            if (!isNaN(val) && val >= 0) return val;
+        }
+        if (systemConfig.tarifBulanan[m] !== undefined) {
+            const val = Number(systemConfig.tarifBulanan[m]);
+            if (!isNaN(val) && val >= 0) return val;
+        }
+    }
+    return def;
+}
+
+function getTarifIuranSummary(year = currentActiveYear) {
+    const rates = [];
+    for (let m = 1; m <= 12; m++) {
+        rates.push(getNominalIuranBulan(m, year));
+    }
+    const allSame = rates.every(r => r === rates[0]);
+    if (allSame) {
+        return `Rp ${rates[0].toLocaleString('id-ID')} / bln`;
+    }
+
+    const minRate = Math.min(...rates);
+    const maxRate = Math.max(...rates);
+    
+    const firstHalfSame = rates.slice(0, 6).every(r => r === rates[0]);
+    const secondHalfSame = rates.slice(6, 12).every(r => r === rates[6]);
+    if (firstHalfSame && secondHalfSame) {
+        return `Jan-Jun: Rp ${rates[0].toLocaleString('id-ID')} • Jul-Des: Rp ${rates[6].toLocaleString('id-ID')}`;
+    }
+
+    return `Rp ${minRate.toLocaleString('id-ID')} - Rp ${maxRate.toLocaleString('id-ID')} / bln (Fleksibel)`;
+}
 
 // Admin Accounts Store
 let adminUsers = [
@@ -1307,6 +1626,9 @@ function loadLocalStorageData() {
             if (!systemConfig.nominalIuranDefault || systemConfig.nominalIuranDefault === 50000) {
                 systemConfig.nominalIuranDefault = 20000;
             }
+            if (!systemConfig.tarifBulanan || typeof systemConfig.tarifBulanan !== 'object') {
+                systemConfig.tarifBulanan = {};
+            }
         }
 
         const savedAdmins = localStorage.getItem('SIMAK_ADMINS');
@@ -1351,8 +1673,11 @@ function saveLocalStorageData(skipCloudSync = false) {
         localStorage.setItem('SIMAK_PENGUMUMAN', JSON.stringify(pengumumanData));
         localStorage.setItem('SIMAK_KONTAK', JSON.stringify(kontakData));
 
-        if (!skipCloudSync && typeof debouncePushToSupabase === 'function') {
-            debouncePushToSupabase();
+        if (!skipCloudSync) {
+            if (typeof debouncePushToSupabase === 'function') {
+                debouncePushToSupabase();
+            }
+
         }
     } catch (err) {
         console.error("Gagal menyimpan ke localStorage:", err);
@@ -1498,6 +1823,19 @@ function closeSuccessModal() {
 
 // Global Event listener untuk modal (Escape, Click backdrop)
 document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modalTarif = document.getElementById('modalTarifIuran');
+        if (modalTarif && !modalTarif.classList.contains('hidden')) {
+            closeModalTarifIuran();
+            return;
+        }
+        const modalExp = document.getElementById('modalExportIuran');
+        if (modalExp && !modalExp.classList.contains('hidden')) {
+            closeIuranExportModal();
+            return;
+        }
+    }
+
     if (e.key === 'Escape' || e.key === 'Enter') {
         const modalSuccess = document.getElementById('modalSuccess');
         if (modalSuccess && !modalSuccess.classList.contains('hidden')) {
@@ -1525,6 +1863,22 @@ window.addEventListener('DOMContentLoaded', () => {
         modalSuccess.addEventListener('click', (e) => {
             if (e.target === modalSuccess) {
                 closeSuccessModal();
+            }
+        });
+    }
+    const modalExp = document.getElementById('modalExportIuran');
+    if (modalExp) {
+        modalExp.addEventListener('click', (e) => {
+            if (e.target === modalExp) {
+                closeIuranExportModal();
+            }
+        });
+    }
+    const modalTarif = document.getElementById('modalTarifIuran');
+    if (modalTarif) {
+        modalTarif.addEventListener('click', (e) => {
+            if (e.target === modalTarif) {
+                closeModalTarifIuran();
             }
         });
     }
@@ -1847,7 +2201,7 @@ function updateAppIdentityUI() {
         const kName = systemConfig.namaKomplek || "SIMAK";
         if (sidebarTitle) sidebarTitle.textContent = kName;
         if (sidebarSub) sidebarSub.textContent = systemConfig.alamatKomplek || "Manajemen Komplek";
-        if (badgeNominal) badgeNominal.textContent = `Rp ${Number(systemConfig.nominalIuranDefault || 20000).toLocaleString('id-ID')}`;
+        if (badgeNominal) badgeNominal.textContent = getTarifIuranSummary(currentActiveYear);
         
         if (cfgNama) cfgNama.value = systemConfig.namaKomplek || '';
         if (cfgAlamat) cfgAlamat.value = systemConfig.alamatKomplek || '';
@@ -1993,7 +2347,7 @@ async function fetchAndSyncFromDatabase(minDelayMs = 300) {
         .then(res => res.json())
         .catch(err => {
             if (err.name !== 'AbortError') {
-                console.warn('Gagal memuat database:', err);
+                console.warn('Gagal memuat database Supabase:', err);
             }
             return null;
         });
@@ -2359,6 +2713,8 @@ function updateRoleUI() {
             sbBadge.style.display = 'none';
         }
     }
+
+
 
     // 3. Hak Akses Kas (Super Admin & Bendahara)
     document.querySelectorAll('.kas-admin-only').forEach(el => {
@@ -3064,6 +3420,10 @@ function handleIuranFilterChange() {
 }
 
 function renderIuranTable() {
+    renderIuranTableHeader();
+    const badgeNominal = document.getElementById('nominalIuranBadge');
+    if (badgeNominal) badgeNominal.textContent = getTarifIuranSummary(currentActiveYear);
+
     const filterElem = document.getElementById('iuranFilterBlokSelect');
     const searchElem = document.getElementById('searchIuranInput');
     const tbody = document.getElementById('iuranTableBody');
@@ -3097,6 +3457,7 @@ function renderIuranTable() {
     const startIndex = (currentIuranPage - 1) * IURAN_PER_PAGE;
     const endIndex = Math.min(startIndex + IURAN_PER_PAGE, totalItems);
     const paginatedWarga = filteredWarga.slice(startIndex, endIndex);
+    const monthsNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
     tbody.innerHTML = paginatedWarga.map((w, index) => {
         const globalIndex = startIndex + index + 1;
@@ -3106,13 +3467,25 @@ function renderIuranTable() {
         const monthsStatus = iuranData[currentActiveYear][w.id];
         const totalLunasCount = monthsStatus.filter(Boolean).length;
 
-        const monthButtons = monthsStatus.map((isLunas, monthIdx) => `
-            <td class="px-1 py-2 text-center">
-                <button onclick="toggleIuranStatus('${w.id}', ${monthIdx})" class="w-7 h-7 rounded-lg text-[10px] font-bold transition-transform active:scale-95 shadow-sm cursor-pointer ${isLunas ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-slate-100 text-slate-400 hover:bg-rose-100 hover:text-rose-600'}">
-                    ${isLunas ? '✓' : '✕'}
-                </button>
-            </td>
-        `).join('');
+        let wargaTotalPaidRp = 0;
+        monthsStatus.forEach((isLunas, mIdx) => {
+            if (isLunas) {
+                wargaTotalPaidRp += getNominalIuranBulan(mIdx, currentActiveYear);
+            }
+        });
+
+        const monthButtons = monthsStatus.map((isLunas, monthIdx) => {
+            const mTarif = getNominalIuranBulan(monthIdx, currentActiveYear);
+            const mTarifStr = (typeof formatRupiah === 'function') ? formatRupiah(mTarif) : 'Rp ' + mTarif.toLocaleString('id-ID');
+            const mName = monthsNames[monthIdx];
+            return `
+                <td class="px-1 py-2 text-center">
+                    <button onclick="toggleIuranStatus('${w.id}', ${monthIdx})" title="${mName} (${mTarifStr}): ${isLunas ? 'LUNAS' : 'Belum Bayar'} - Klik untuk ubah status" class="w-7 h-7 rounded-lg text-[10px] font-bold transition-transform active:scale-95 shadow-sm cursor-pointer ${isLunas ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-slate-100 text-slate-400 hover:bg-rose-100 hover:text-rose-600'}">
+                        ${isLunas ? '✓' : '✕'}
+                    </button>
+                </td>
+            `;
+        }).join('');
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -3130,9 +3503,14 @@ function renderIuranTable() {
                 </td>
                 ${monthButtons}
                 <td class="px-3 py-2 text-center font-bold text-slate-700">
-                    <span class="px-2 py-0.5 rounded-full text-[10px] ${totalLunasCount === 12 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
-                        ${totalLunasCount} / 12
-                    </span>
+                    <div class="inline-flex flex-col items-center">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] ${totalLunasCount === 12 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
+                            ${totalLunasCount} / 12
+                        </span>
+                        <span class="text-[9px] text-sky-700 font-semibold mt-0.5" title="Total akumulasi iuran terbayar sesuai tarif tiap bulan">
+                            ${typeof formatRupiah === 'function' ? formatRupiah(wargaTotalPaidRp) : 'Rp ' + wargaTotalPaidRp.toLocaleString('id-ID')}
+                        </span>
+                    </div>
                 </td>
             </tr>
         `;
@@ -3240,6 +3618,659 @@ function toggleIuranStatus(wargaId, monthIdx) {
     saveLocalStorageData();
     renderIuranTable();
     if (typeof renderDashboard === 'function') renderDashboard();
+}
+
+function renderIuranTableHeader() {
+    const thead = document.getElementById('iuranTableHeader');
+    if (!thead) return;
+    const monthsNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const defRate = Number(systemConfig?.nominalIuranDefault) || 20000;
+    
+    const thMonths = monthsNames.map((m, mIdx) => {
+        const mRate = getNominalIuranBulan(mIdx, currentActiveYear);
+        const isChanged = mRate !== defRate;
+        const rateTag = (mRate >= 1000) ? (mRate / 1000) + 'rb' : mRate;
+        return `
+            <th class="px-1 py-2.5 w-16 text-center cursor-pointer hover:bg-slate-200/70 transition-colors" onclick="openModalTarifIuran()" title="Bulan ${m} (${currentActiveYear}): Rp ${mRate.toLocaleString('id-ID')} (Klik untuk atur tarif)">
+                <div class="font-bold text-slate-700 text-xs">${m}</div>
+                <div class="mt-0.5"><span class="text-[9px] font-semibold px-1 py-0.2 rounded ${isChanged ? 'bg-amber-100 text-amber-800 border border-amber-300 font-bold' : 'text-slate-400'}">${rateTag}</span></div>
+            </th>
+        `;
+    }).join('');
+
+    thead.innerHTML = `
+        <tr>
+            <th class="px-3 py-3 text-left w-36">Warga & Blok</th>
+            ${thMonths}
+            <th class="px-3 py-3 w-28 text-center">Total Lunas & Rp</th>
+        </tr>
+    `;
+}
+
+
+// =========================================================================
+// js/iuran-tarif.js - Modul Pengaturan Tarif Fleksibel Bulanan
+// =========================================================================
+
+function openModalTarifIuran() {
+    if (!activeAdminSession) {
+        openLoginModal();
+        showToastNotification('Silakan login sebagai admin untuk mengatur tarif iuran.', 'warning');
+        return;
+    }
+
+    const yearBadge = document.getElementById('modalTarifYearBadge');
+    if (yearBadge) yearBadge.textContent = currentActiveYear;
+
+    const defText = document.getElementById('modalTarifDefaultText');
+    const defRate = Number(systemConfig?.nominalIuranDefault) || 20000;
+    if (defText) defText.textContent = defRate.toLocaleString('id-ID');
+
+    const quickNominal = document.getElementById('quickTarifNominal');
+    if (quickNominal) quickNominal.value = defRate;
+
+    populateTarifModalGrid();
+
+    const modal = document.getElementById('modalTarifIuran');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeModalTarifIuran() {
+    const modal = document.getElementById('modalTarifIuran');
+    if (modal) modal.classList.add('hidden');
+}
+
+function populateTarifModalGrid() {
+    const grid = document.getElementById('modalTarifMonthsGrid');
+    if (!grid) return;
+
+    const monthsNames = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    const defRate = Number(systemConfig?.nominalIuranDefault) || 20000;
+
+    grid.innerHTML = monthsNames.map((name, idx) => {
+        const m = idx + 1;
+        const currentVal = getNominalIuranBulan(idx, currentActiveYear);
+        const isCustom = currentVal !== defRate;
+        return `
+            <div class="p-2.5 rounded-xl border ${isCustom ? 'border-sky-300 bg-sky-50/60 ring-1 ring-sky-200' : 'border-slate-200 bg-white'} space-y-1 transition-all" id="tarifCardMonth-${m}">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-700">${m < 10 ? '0' + m : m}. ${name}</span>
+                    <span class="text-[9px] px-1.5 py-0.2 rounded font-semibold ${isCustom ? 'bg-sky-100 text-sky-800 font-bold border border-sky-200' : 'text-slate-400'}" id="tarifTagMonth-${m}">
+                        ${isCustom ? 'Disesuaikan' : 'Standar'}
+                    </span>
+                </div>
+                <div class="relative">
+                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">Rp</span>
+                    <input type="number" id="inputTarifMonth-${m}" min="0" step="1000" value="${currentVal}" 
+                        oninput="onTarifGridInputChange()" 
+                        class="w-full pl-8 pr-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    recalculateTarifModalSummary();
+}
+
+function onTarifGridInputChange() {
+    recalculateTarifModalSummary();
+}
+
+function recalculateTarifModalSummary() {
+    const defRate = Number(systemConfig?.nominalIuranDefault) || 20000;
+    let totalYear = 0;
+    
+    for (let m = 1; m <= 12; m++) {
+        const input = document.getElementById(`inputTarifMonth-${m}`);
+        const val = input ? (parseFloat(input.value) || 0) : defRate;
+        totalYear += val;
+
+        const card = document.getElementById(`tarifCardMonth-${m}`);
+        const tag = document.getElementById(`tarifTagMonth-${m}`);
+        const isCustom = val !== defRate;
+        if (card) {
+            if (isCustom) {
+                card.className = 'p-2.5 rounded-xl border border-sky-300 bg-sky-50/60 ring-1 ring-sky-200 space-y-1 transition-all';
+            } else {
+                card.className = 'p-2.5 rounded-xl border border-slate-200 bg-white space-y-1 transition-all';
+            }
+        }
+        if (tag) {
+            if (isCustom) {
+                tag.textContent = 'Disesuaikan';
+                tag.className = 'text-[9px] px-1.5 py-0.2 rounded font-semibold bg-sky-100 text-sky-800 font-bold border border-sky-200';
+            } else {
+                tag.textContent = 'Standar';
+                tag.className = 'text-[9px] px-1.5 py-0.2 rounded font-semibold text-slate-400';
+            }
+        }
+    }
+
+    const avgMonth = totalYear / 12;
+    const totalWarga = wargaData.length;
+    const potentialTotal = totalYear * totalWarga;
+
+    const elTotalKK = document.getElementById('modalTarifTotalYearPerKK');
+    const elAvg = document.getElementById('modalTarifAvgMonth');
+    const elPotential = document.getElementById('modalTarifTotalPotential');
+
+    if (elTotalKK) elTotalKK.textContent = 'Rp ' + Math.round(totalYear).toLocaleString('id-ID');
+    if (elAvg) elAvg.textContent = 'Rp ' + Math.round(avgMonth).toLocaleString('id-ID') + ' / bln';
+    if (elPotential) elPotential.textContent = 'Rp ' + Math.round(potentialTotal).toLocaleString('id-ID');
+}
+
+function applyQuickTarifChange() {
+    const selectMonth = document.getElementById('quickTarifStartMonth');
+    const inputNominal = document.getElementById('quickTarifNominal');
+    if (!selectMonth || !inputNominal) return;
+
+    const startMonth = parseInt(selectMonth.value) || 1;
+    const newNominal = parseFloat(inputNominal.value);
+
+    if (isNaN(newNominal) || newNominal < 0) {
+        showToastNotification('Masukkan nominal tarif baru yang valid.', 'warning');
+        return;
+    }
+
+    for (let m = startMonth; m <= 12; m++) {
+        const inp = document.getElementById(`inputTarifMonth-${m}`);
+        if (inp) inp.value = newNominal;
+    }
+
+    recalculateTarifModalSummary();
+    const monthsNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    showToastNotification(`Tarif Rp ${newNominal.toLocaleString('id-ID')} diterapkan mulai ${monthsNames[startMonth]} s/d Desember.`, 'info');
+}
+
+function resetTarifToDefault() {
+    const defRate = Number(systemConfig?.nominalIuranDefault) || 20000;
+    for (let m = 1; m <= 12; m++) {
+        const inp = document.getElementById(`inputTarifMonth-${m}`);
+        if (inp) inp.value = defRate;
+    }
+    recalculateTarifModalSummary();
+    showToastNotification(`Seluruh bulan direset ke tarif default (Rp ${defRate.toLocaleString('id-ID')}).`, 'info');
+}
+
+function saveTarifBulanan() {
+    if (!systemConfig.tarifBulanan) systemConfig.tarifBulanan = {};
+    if (!systemConfig.tarifBulanan[currentActiveYear]) systemConfig.tarifBulanan[currentActiveYear] = {};
+
+    const defRate = Number(systemConfig?.nominalIuranDefault) || 20000;
+
+    for (let m = 1; m <= 12; m++) {
+        const inp = document.getElementById(`inputTarifMonth-${m}`);
+        const val = inp ? (parseFloat(inp.value) || 0) : defRate;
+        systemConfig.tarifBulanan[currentActiveYear][m] = val;
+    }
+
+    saveLocalStorageData();
+    updateAppIdentityUI();
+    renderIuranTable();
+    if (typeof updateIuranExportPreview === 'function') {
+        updateIuranExportPreview();
+    }
+
+    closeModalTarifIuran();
+    showSuccessModal(`Tarif iuran fleksibel Tahun ${currentActiveYear} berhasil disimpan!`);
+}
+
+
+// =========================================================================
+// js/iuran-export.js - Fitur Export Ceklis Iuran (JPG / PDF)
+// =========================================================================
+
+let activeIuranExportFormat = 'jpg'; // 'jpg' atau 'pdf'
+
+function openIuranExportModal(format = 'jpg') {
+    activeIuranExportFormat = (format === 'pdf') ? 'pdf' : 'jpg';
+    
+    const radioJpg = document.getElementById('exportFmtJpg');
+    const radioPdf = document.getElementById('exportFmtPdf');
+    if (radioJpg && radioPdf) {
+        if (activeIuranExportFormat === 'pdf') {
+            radioPdf.checked = true;
+        } else {
+            radioJpg.checked = true;
+        }
+    }
+    
+    updateIuranExportOptions();
+    updateIuranExportPreview();
+    
+    const modal = document.getElementById('modalExportIuran');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeIuranExportModal() {
+    const modal = document.getElementById('modalExportIuran');
+    if (modal) modal.classList.add('hidden');
+}
+
+function updateIuranExportOptions() {
+    const radioPdf = document.getElementById('exportFmtPdf');
+    activeIuranExportFormat = (radioPdf && radioPdf.checked) ? 'pdf' : 'jpg';
+    
+    const hintText = document.getElementById('exportFormatHintText');
+    const btnText = document.getElementById('exportBtnText');
+    const btnIcon = document.getElementById('exportBtnIcon');
+    const executeBtn = document.getElementById('btnExecuteIuranExport');
+    
+    if (activeIuranExportFormat === 'pdf') {
+        if (hintText) hintText.textContent = 'Dokumen PDF siap cetak ukuran A4 Landscape beresolusi tinggi.';
+        if (btnText) btnText.textContent = 'Unduh Dokumen (PDF)';
+        if (btnIcon) btnIcon.className = 'fa-regular fa-file-pdf text-xs';
+        if (executeBtn) {
+            executeBtn.className = 'px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-rose-600/20 cursor-pointer flex items-center space-x-2 transition-all';
+        }
+    } else {
+        if (hintText) hintText.textContent = 'File Gambar JPG jernih dan tajam (skala 2x), praktis untuk dibagikan ke WhatsApp warga.';
+        if (btnText) btnText.textContent = 'Unduh File Gambar (JPG)';
+        if (btnIcon) btnIcon.className = 'fa-regular fa-image text-xs';
+        if (executeBtn) {
+            executeBtn.className = 'px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-amber-600/20 cursor-pointer flex items-center space-x-2 transition-all';
+        }
+    }
+}
+
+function getFilteredWargaForExport() {
+    const filterElem = document.getElementById('iuranFilterBlokSelect');
+    const searchElem = document.getElementById('searchIuranInput');
+    const filterBlok = filterElem ? filterElem.value : 'ALL';
+    const searchVal = searchElem ? searchElem.value.toLowerCase().trim() : '';
+
+    return wargaData.filter(w => {
+        const matchBlok = typeof matchesBlockFilter === 'function' ? matchesBlockFilter(w.blok, filterBlok) : true;
+        const matchSearch = !searchVal || w.nama.toLowerCase().includes(searchVal) || (w.blok && w.blok.toLowerCase().includes(searchVal));
+        return matchBlok && matchSearch;
+    });
+}
+
+function updateIuranExportPreview() {
+    const printArea = document.getElementById('iuranExportPrintArea');
+    if (!printArea) return;
+
+    const filteredWarga = getFilteredWargaForExport();
+    const totalFiltered = filteredWarga.length;
+    
+    const badgeWarga = document.getElementById('exportTotalWargaBadge');
+    if (badgeWarga) badgeWarga.textContent = totalFiltered;
+
+    const scopePageRadio = document.getElementById('exportScopePage');
+    const isCurrentPageOnly = scopePageRadio && scopePageRadio.checked;
+
+    let targetWargaList = filteredWarga;
+    if (isCurrentPageOnly) {
+        const startIndex = (currentIuranPage - 1) * IURAN_PER_PAGE;
+        const endIndex = Math.min(startIndex + IURAN_PER_PAGE, totalFiltered);
+        targetWargaList = filteredWarga.slice(startIndex, endIndex);
+    }
+
+    const scopeInfo = document.getElementById('exportPreviewScopeInfo');
+    const filterElem = document.getElementById('iuranFilterBlokSelect');
+    const blokLabel = (filterElem && filterElem.value !== 'ALL') ? `Blok ${filterElem.value}` : 'Semua Blok';
+    if (scopeInfo) {
+        scopeInfo.textContent = `Tahun ${currentActiveYear} • ${blokLabel} (${targetWargaList.length} Warga)`;
+    }
+
+    const showStats = document.getElementById('exportOptStats')?.checked ?? true;
+    const showNominal = document.getElementById('exportOptNominal')?.checked ?? true;
+    const showSignatures = document.getElementById('exportOptSignatures')?.checked ?? true;
+
+    if (!iuranData[currentActiveYear]) iuranData[currentActiveYear] = {};
+
+    // Hitung total statistik dengan tarif fleksibel tiap bulan
+    let grandTotalLunas = 0;
+    let grandTotalNominal = 0;
+    const monthlyLunasCounts = Array(12).fill(0);
+    const monthlyPaidNominals = Array(12).fill(0);
+
+    targetWargaList.forEach(w => {
+        const status = iuranData[currentActiveYear][w.id] || Array(12).fill(false);
+        status.forEach((isLunas, mIdx) => {
+            if (isLunas) {
+                const mRate = getNominalIuranBulan(mIdx, currentActiveYear);
+                monthlyLunasCounts[mIdx]++;
+                monthlyPaidNominals[mIdx] += mRate;
+                grandTotalLunas++;
+                grandTotalNominal += mRate;
+            }
+        });
+    });
+
+    const totalTargetBulan = targetWargaList.length * 12;
+    const persentaseLunas = totalTargetBulan > 0 ? Math.round((grandTotalLunas / totalTargetBulan) * 100) : 0;
+    const tarifSummaryStr = getTarifIuranSummary(currentActiveYear);
+
+    const now = new Date();
+    const dateFormatted = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const timeFormatted = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+
+    const namaKomplek = systemConfig.namaKomplek || "SIMAK - Komplek Rafanda Residence 6";
+    const alamatKomplek = systemConfig.alamatKomplek || "Jl. Terusan Cisokan No. 12, Bandung";
+
+    const monthsNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+    // Bangun HTML Dokumen Cetak
+    let html = `
+        <div style="background-color: #ffffff; color: #0f172a; font-family: 'Inter', -apple-system, sans-serif; padding: 4px;">
+            <!-- Kop Laporan Resmi -->
+            <div style="border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+                    <div>
+                        <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #0284c7;">Sistem Informasi Manajemen Komplek (SIMAK)</div>
+                        <h1 style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 2px 0 4px 0; text-transform: uppercase; letter-spacing: 0.02em;">${namaKomplek}</h1>
+                        <p style="font-size: 11px; color: #64748b; margin: 0;">${alamatKomplek}</p>
+                    </div>
+                    <div style="text-align: right; font-size: 10px; color: #475569;">
+                        <div style="display: inline-block; padding: 4px 10px; background-color: #f1f5f9; border-radius: 8px; font-weight: 600; color: #334155; margin-bottom: 4px;">
+                            TAHUN ANGGARAN ${currentActiveYear}
+                        </div>
+                        <div>Dicetak: <strong>${dateFormatted}</strong>, ${timeFormatted}</div>
+                        <div>Filter: <strong>${blokLabel}</strong></div>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+                    <h2 style="font-size: 14px; font-weight: 700; color: #1e293b; margin: 0; text-transform: uppercase; letter-spacing: 0.04em;">
+                        LEMBAR REKAPITULASI CEKLIS PEMBAYARAN IURAN KAS BULANAN
+                    </h2>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                        Tarif Iuran: <strong>${tarifSummaryStr}</strong> &bull; Total Warga: <strong>${targetWargaList.length} KK</strong>
+                    </div>
+                </div>
+            </div>
+    `;
+
+    // Ringkasan Statistik
+    if (showStats) {
+        html += `
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px;">
+                <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; background-color: #f8fafc;">
+                    <div style="font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase;">Total Warga</div>
+                    <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin-top: 2px;">${targetWargaList.length} <span style="font-size: 11px; font-weight: normal; color: #64748b;">KK</span></div>
+                </div>
+                <div style="border: 1px solid #bbf7d0; border-radius: 8px; padding: 8px 12px; background-color: #f0fdf4;">
+                    <div style="font-size: 10px; color: #166534; font-weight: 600; text-transform: uppercase;">Total Bulan Lunas</div>
+                    <div style="font-size: 16px; font-weight: 800; color: #15803d; margin-top: 2px;">${grandTotalLunas} <span style="font-size: 11px; font-weight: normal; color: #166534;">(${persentaseLunas}%)</span></div>
+                </div>
+                <div style="border: 1px solid #fecdd3; border-radius: 8px; padding: 8px 12px; background-color: #fff1f2;">
+                    <div style="font-size: 10px; color: #9f1239; font-weight: 600; text-transform: uppercase;">Total Tunggakan</div>
+                    <div style="font-size: 16px; font-weight: 800; color: #be123c; margin-top: 2px;">${totalTargetBulan - grandTotalLunas} <span style="font-size: 11px; font-weight: normal; color: #9f1239;">Bulan</span></div>
+                </div>
+                <div style="border: 1px solid #bae6fd; border-radius: 8px; padding: 8px 12px; background-color: #f0f9ff;">
+                    <div style="font-size: 10px; color: #0369a1; font-weight: 600; text-transform: uppercase;">Total Kas Terkumpul</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #0284c7; margin-top: 2px;">${typeof formatRupiah === 'function' ? formatRupiah(grandTotalNominal) : 'Rp ' + grandTotalNominal.toLocaleString('id-ID')}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Tabel Matriks Ceklis
+    html += `
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; border: 1px solid #cbd5e1;">
+            <thead>
+                <tr style="background-color: #f1f5f9; color: #334155; font-weight: 700; border-bottom: 2px solid #cbd5e1;">
+                    <th style="padding: 6px 4px; border: 1px solid #cbd5e1; width: 32px;">No</th>
+                    <th style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: left; width: 180px;">Nama Warga & Blok</th>
+                    ${monthsNames.map((m, mIdx) => {
+                        const mRate = getNominalIuranBulan(mIdx, currentActiveYear);
+                        const mRateShort = (mRate >= 1000) ? (mRate / 1000) + 'k' : mRate;
+                        return `<th style="padding: 6px 2px; border: 1px solid #cbd5e1; width: 34px;">
+                            <div>${m}</div>
+                            <div style="font-size: 8px; font-weight: normal; color: #64748b;">${mRateShort}</div>
+                        </th>`;
+                    }).join('')}
+                    <th style="padding: 6px 4px; border: 1px solid #cbd5e1; width: 55px;">Lunas</th>
+                    ${showNominal ? `<th style="padding: 6px 6px; border: 1px solid #cbd5e1; width: 90px; text-align: right;">Total (Rp)</th>` : ''}
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    if (targetWargaList.length === 0) {
+        html += `
+            <tr>
+                <td colspan="${showNominal ? 16 : 15}" style="padding: 24px; text-align: center; color: #94a3b8; font-style: italic;">
+                    Tidak ada data warga untuk ceklis iuran pada kriteria ini.
+                </td>
+            </tr>
+        `;
+    } else {
+        targetWargaList.forEach((w, idx) => {
+            const monthsStatus = iuranData[currentActiveYear][w.id] || Array(12).fill(false);
+            const lunasCount = monthsStatus.filter(Boolean).length;
+            let citizenTotalPaid = 0;
+            monthsStatus.forEach((isLunas, mIdx) => {
+                if (isLunas) {
+                    citizenTotalPaid += getNominalIuranBulan(mIdx, currentActiveYear);
+                }
+            });
+            const bgRow = (idx % 2 === 1) ? '#f8fafc' : '#ffffff';
+
+            const monthCells = monthsStatus.map((isLunas, mIdx) => {
+                const mRate = getNominalIuranBulan(mIdx, currentActiveYear);
+                if (isLunas) {
+                    return `<td style="padding: 4px 1px; border: 1px solid #e2e8f0; background-color: #f0fdf4;" title="Lunas (${typeof formatRupiah === 'function' ? formatRupiah(mRate) : mRate})">
+                        <span style="display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 4px; background-color: #10b981; color: #ffffff; font-size: 10px; font-weight: bold;">✓</span>
+                    </td>`;
+                } else {
+                    return `<td style="padding: 4px 1px; border: 1px solid #e2e8f0; color: #cbd5e1; font-weight: normal;">
+                        <span style="color: #cbd5e1; font-size: 11px;">-</span>
+                    </td>`;
+                }
+            }).join('');
+
+            html += `
+                <tr style="background-color: ${bgRow};">
+                    <td style="padding: 5px 4px; border: 1px solid #e2e8f0; color: #64748b; font-weight: 500;">${idx + 1}</td>
+                    <td style="padding: 5px 8px; border: 1px solid #e2e8f0; text-align: left;">
+                        <div style="font-weight: 600; color: #0f172a; font-size: 11px;">${w.nama}</div>
+                        <div style="font-size: 10px; color: #64748b;">${w.blok || '-'} ${w.status && (w.status.includes('Belum') || w.status.includes('Kosong')) ? '<span style="color:#d97706; font-size:9px;">(Kosong)</span>' : ''}</div>
+                    </td>
+                    ${monthCells}
+                    <td style="padding: 5px 4px; border: 1px solid #e2e8f0; font-weight: 700; color: ${lunasCount === 12 ? '#166534' : '#334155'}; background-color: ${lunasCount === 12 ? '#dcfce7' : 'transparent'};">
+                        ${lunasCount}/12
+                    </td>
+                    ${showNominal ? `
+                        <td style="padding: 5px 6px; border: 1px solid #e2e8f0; text-align: right; font-weight: 600; color: #1e293b;">
+                            ${typeof formatRupiah === 'function' ? formatRupiah(citizenTotalPaid) : 'Rp ' + citizenTotalPaid.toLocaleString('id-ID')}
+                        </td>
+                    ` : ''}
+                </tr>
+            `;
+        });
+    }
+
+    // Footer Total Tabel
+    html += `
+            </tbody>
+            <tfoot>
+                <tr style="background-color: #f1f5f9; font-weight: 700; border-top: 2px solid #cbd5e1; color: #1e293b;">
+                    <td colspan="2" style="padding: 8px 8px; border: 1px solid #cbd5e1; text-align: right; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em;">
+                        Total Lunas Per Bulan:
+                    </td>
+                    ${monthlyLunasCounts.map((cnt, mIdx) => `
+                        <td style="padding: 6px 1px; border: 1px solid #cbd5e1; font-size: 10px; color: ${cnt > 0 ? '#047857' : '#64748b'}; background-color: ${cnt > 0 ? '#ecfdf5' : 'transparent'};">
+                            <div>${cnt}</div>
+                            <div style="font-size: 8px; color: #0284c7;">${monthlyPaidNominals[mIdx] > 0 ? ((monthlyPaidNominals[mIdx] >= 1000) ? Math.round(monthlyPaidNominals[mIdx]/1000) + 'k' : monthlyPaidNominals[mIdx]) : '-'}</div>
+                        </td>
+                    `).join('')}
+                    <td style="padding: 6px 4px; border: 1px solid #cbd5e1; font-size: 11px; background-color: #e2e8f0;">
+                        ${grandTotalLunas}
+                    </td>
+                    ${showNominal ? `
+                        <td style="padding: 6px 6px; border: 1px solid #cbd5e1; text-align: right; font-size: 11px; color: #0284c7; background-color: #e0f2fe;">
+                            ${typeof formatRupiah === 'function' ? formatRupiah(grandTotalNominal) : 'Rp ' + grandTotalNominal.toLocaleString('id-ID')}
+                        </td>
+                    ` : ''}
+                </tr>
+            </tfoot>
+        </table>
+    `;
+
+    // Kolom Tanda Tangan
+    if (showSignatures) {
+        html += `
+            <div style="margin-top: 24px; padding-top: 14px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: flex-start; font-size: 11px; color: #334155;">
+                <div style="text-align: center; width: 220px;">
+                    <div>Mengetahui,</div>
+                    <div style="font-weight: 700; margin-top: 2px;">Ketua Komplek / Pengurus RT</div>
+                    <div style="height: 52px;"></div>
+                    <div style="border-bottom: 1px solid #64748b; width: 170px; margin: 0 auto;"></div>
+                    <div style="font-size: 10px; color: #64748b; margin-top: 3px;">( .................................................. )</div>
+                </div>
+
+                <div style="text-align: center; width: 220px;">
+                    <div>${alamatKomplek.split(',')[1]?.trim() || 'Bandung'}, ${dateFormatted}</div>
+                    <div style="font-weight: 700; margin-top: 2px;">Bendahara Komplek</div>
+                    <div style="height: 52px;"></div>
+                    <div style="border-bottom: 1px solid #64748b; width: 170px; margin: 0 auto;"></div>
+                    <div style="font-size: 10px; color: #64748b; margin-top: 3px;">( ${activeAdminSession?.name || 'Bendahara SIMAK'} )</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Catatan Kaki Dokumen
+    html += `
+            <div style="margin-top: 16px; font-size: 9px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 6px;">
+                Dokumen ini dicetak otomatis dari Sistem Informasi Manajemen Komplek (SIMAK). Valid dan sah sebagai arsip kas RT/RW.
+            </div>
+        </div>
+    `;
+
+    printArea.innerHTML = html;
+}
+
+async function executeIuranExport() {
+    const printArea = document.getElementById('iuranExportPrintArea');
+    if (!printArea) return;
+
+    if (typeof html2canvas === 'undefined') {
+        showToastNotification('Pustaka html2canvas sedang dimuat, coba sesaat lagi.', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('btnExecuteIuranExport');
+    const btnText = document.getElementById('exportBtnText');
+    const btnIcon = document.getElementById('exportBtnIcon');
+    const origText = btnText ? btnText.textContent : 'Unduh';
+    
+    if (btn) btn.disabled = true;
+    if (btnText) btnText.textContent = 'Memproses berkas...';
+    if (btnIcon) btnIcon.className = 'fa-solid fa-circle-notch fa-spin text-xs';
+
+    showToastNotification(`Menyiapkan berkas ${activeIuranExportFormat.toUpperCase()}...`, 'info');
+
+    try {
+        // Beri sedikit jeda agar DOM ter-render sempurna
+        await new Promise(r => setTimeout(r, 150));
+
+        const canvas = await html2canvas(printArea, {
+            scale: 2, // Resolusi tinggi tajam (retina)
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false
+        });
+
+        const filterElem = document.getElementById('iuranFilterBlokSelect');
+        const blokSlug = (filterElem && filterElem.value !== 'ALL') ? `_Blok-${filterElem.value}` : '';
+        const todayStr = new Date().toISOString().split('T')[0];
+        const fileNameBase = `SIMAK_Ceklis_Iuran_${currentActiveYear}${blokSlug}_${todayStr}`;
+
+        if (activeIuranExportFormat === 'jpg') {
+            // Export JPG
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    showToastNotification('Gagal membuat gambar JPG.', 'error');
+                    return;
+                }
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${fileNameBase}.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToastNotification('Rekap ceklis iuran berhasil diunduh sebagai gambar JPG!', 'success');
+                closeIuranExportModal();
+            }, 'image/jpeg', 0.95);
+        } else {
+            // Export PDF
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                showToastNotification('Pustaka jsPDF belum siap. Membuka jendela cetak browser...', 'warning');
+                window.print();
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            // Dimensi A4 Landscape: 297mm x 210mm
+            // Margin 10mm kiri, kanan, atas, bawah -> printable: 277mm x 190mm
+            const marginMm = 10;
+            const printableWidthMm = 277;
+            const printableHeightMm = 190;
+
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const imgHeightMm = (canvasHeight * printableWidthMm) / canvasWidth;
+
+            if (imgHeightMm <= printableHeightMm) {
+                // Pas dalam 1 halaman
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                pdf.addImage(imgData, 'JPEG', marginMm, marginMm, printableWidthMm, imgHeightMm);
+            } else {
+                // Multi-halaman (Iris vertikal per halaman A4)
+                let remainingHeight = canvasHeight;
+                const pageCanvasHeight = (canvasWidth * printableHeightMm) / printableWidthMm;
+                let currentY = 0;
+                let pageIndex = 1;
+
+                while (remainingHeight > 0) {
+                    const chunkHeight = Math.min(remainingHeight, pageCanvasHeight);
+                    const pageCanvas = document.createElement('canvas');
+                    pageCanvas.width = canvasWidth;
+                    pageCanvas.height = chunkHeight;
+                    const ctx = pageCanvas.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+                    ctx.drawImage(canvas, 0, currentY, canvasWidth, chunkHeight, 0, 0, canvasWidth, chunkHeight);
+
+                    const chunkHeightMm = (chunkHeight * printableWidthMm) / canvasWidth;
+                    if (pageIndex > 1) {
+                        pdf.addPage('a4', 'landscape');
+                    }
+                    const pageData = pageCanvas.toDataURL('image/jpeg', 0.95);
+                    pdf.addImage(pageData, 'JPEG', marginMm, marginMm, printableWidthMm, chunkHeightMm);
+
+                    currentY += chunkHeight;
+                    remainingHeight -= chunkHeight;
+                    pageIndex++;
+                }
+            }
+
+            pdf.save(`${fileNameBase}.pdf`);
+            showToastNotification('Rekap ceklis iuran berhasil diunduh sebagai dokumen PDF!', 'success');
+            closeIuranExportModal();
+        }
+    } catch (err) {
+        console.error('Export Ceklis Iuran Error:', err);
+        showToastNotification('Terjadi kesalahan saat memproses export: ' + (err.message || 'Error rendering'), 'error');
+    } finally {
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.textContent = origText;
+        updateIuranExportOptions();
+    }
 }
 
 
@@ -4091,6 +5122,7 @@ function switchConfigSubTab(subId) {
     if (subId === 'supabase' && typeof checkSupabaseStatus === 'function') {
         checkSupabaseStatus(false);
     }
+
 }
 
 function saveComplexProfile(e) {
@@ -4105,6 +5137,7 @@ function saveComplexProfile(e) {
 
     saveLocalStorageData();
     if (typeof updateAppIdentityUI === 'function') updateAppIdentityUI();
+    if (typeof renderIuranTable === 'function') renderIuranTable();
     if (typeof navigateTo === 'function') navigateTo('/dashboard');
 
     // Tampilkan pop-up dialog dengan format kalimat "data berhasil disimpan"
@@ -4461,6 +5494,8 @@ window.onload = function() {
     if (typeof initSupabaseSync === 'function') {
         initSupabaseSync();
     }
+
+
 };
 
     </script>

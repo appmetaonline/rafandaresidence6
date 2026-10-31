@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -501,7 +502,7 @@ app.delete('/api/supabase/kontak/:id', async (req, res) => {
   }
 });
 
-// API: Ambil Skrip SQL Inisialisasi
+// API: Ambil Skrip SQL Inisialisasi Supabase
 app.get('/api/supabase/sql', (req, res) => {
   res.json({ sql: SQL_INIT_SCRIPT });
 });
