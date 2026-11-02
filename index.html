@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- html2canvas & jsPDF for Ceklis Iuran Export (JPG & PDF) -->
+    <!-- html2canvas & jsPDF for Ceklis Iuran Export (PDF) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- Inter Font -->
@@ -362,7 +362,7 @@
                             <h3 class="font-bold text-slate-800 text-lg">Matriks Ceklis Iuran Kas Bulanan</h3>
                             <div class="flex items-center flex-wrap gap-2 text-xs text-slate-500 mt-1">
                                 <span>Tarif Iuran: <span id="nominalIuranBadge" class="font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-lg border border-sky-200">Rp 20.000 / bln</span></span>
-                                <button type="button" onclick="openModalTarifIuran()" class="px-2.5 py-1 bg-white hover:bg-sky-50 text-slate-700 hover:text-sky-700 border border-slate-300 hover:border-sky-300 rounded-lg text-xs font-semibold shadow-2xs cursor-pointer inline-flex items-center space-x-1.5 transition-all" title="Atur perbedaan tarif jika ada kenaikan/perubahan di bulan tertentu">
+                                <button type="button" id="btnAturTarifBulanan" onclick="openModalTarifIuran()" class="admin-only hidden px-2.5 py-1 bg-white hover:bg-sky-50 text-slate-700 hover:text-sky-700 border border-slate-300 hover:border-sky-300 rounded-lg text-xs font-semibold shadow-2xs cursor-pointer inline-flex items-center space-x-1.5 transition-all" title="Atur perbedaan tarif jika ada kenaikan/perubahan di bulan tertentu">
                                     <i class="fa-solid fa-sliders text-sky-600 text-[11px]"></i>
                                     <span>Atur Tarif Bulanan</span>
                                 </button>
@@ -388,13 +388,9 @@
                                 <option value="ALL">Semua Blok (A - F)</option>
                             </select>
                         </div>
-                        <!-- Tombol Export JPG & PDF Ceklis Iuran -->
-                        <div class="flex items-center space-x-2 shrink-0">
-                            <button type="button" onclick="openIuranExportModal('jpg')" class="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/90 text-xs font-semibold rounded-xl flex items-center space-x-1.5 transition-all cursor-pointer shadow-2xs hover:shadow-sm" title="Export Rekap Ceklis ke format Gambar JPG">
-                                <i class="fa-regular fa-image text-amber-600"></i>
-                                <span>Export JPG</span>
-                            </button>
-                            <button type="button" onclick="openIuranExportModal('pdf')" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/90 text-xs font-semibold rounded-xl flex items-center space-x-1.5 transition-all cursor-pointer shadow-2xs hover:shadow-sm" title="Export Rekap Ceklis ke format Dokumen PDF Cetak">
+                        <!-- Tombol Export PDF Ceklis Iuran (Hanya untuk Admin & Bendahara) -->
+                        <div id="containerExportIuran" class="items-center space-x-2 shrink-0 hidden admin-only">
+                            <button type="button" id="btnExportCeklisIuran" onclick="openIuranExportModal('pdf')" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/90 text-xs font-semibold rounded-xl flex items-center space-x-1.5 transition-all cursor-pointer shadow-2xs hover:shadow-sm" title="Export Rekap Ceklis ke format Dokumen PDF Cetak">
                                 <i class="fa-regular fa-file-pdf text-rose-600"></i>
                                 <span>Export PDF</span>
                             </button>
@@ -1229,18 +1225,18 @@
         </div>
     </div>
 
-    <!-- MODAL 7: EXPORT CEKLIS IURAN (JPG / PDF) -->
+    <!-- MODAL 7: EXPORT CEKLIS IURAN (PDF) -->
     <div id="modalExportIuran" class="fixed inset-0 bg-slate-900/70 backdrop-blur-[2px] z-[85] flex items-center justify-center p-3 sm:p-4 hidden transition-all">
         <div class="bg-white rounded-3xl max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
             <!-- Modal Header -->
-            <div class="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-amber-50/50 via-white to-rose-50/50">
+            <div class="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-rose-50/50 via-white to-indigo-50/50">
                 <div class="flex items-center space-x-3">
-                    <div class="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl shrink-0 border border-indigo-100 shadow-2xs">
-                        <i class="fa-solid fa-file-export"></i>
+                    <div class="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl shrink-0 border border-rose-100 shadow-2xs">
+                        <i class="fa-regular fa-file-pdf"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-slate-900 text-base sm:text-lg">Export Ceklis Iuran Kas Bulanan</h3>
-                        <p class="text-xs text-slate-500">Unduh lembar rekapitulasi ceklis iuran kas warga ke format JPG (gambar) atau PDF (dokumen cetak).</p>
+                        <h3 class="font-bold text-slate-900 text-base sm:text-lg">Export Ceklis Iuran Kas Bulanan (PDF)</h3>
+                        <p class="text-xs text-slate-500">Unduh lembar rekapitulasi ceklis iuran kas warga ke format PDF siap cetak (A4 Landscape).</p>
                     </div>
                 </div>
                 <button type="button" onclick="closeIuranExportModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer">
@@ -1252,26 +1248,15 @@
             <div class="p-4 sm:p-6 overflow-y-auto space-y-4 custom-scrollbar flex-1 bg-slate-50/60">
                 <!-- Baris Kontrol Pengaturan Export -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <!-- 1. Pilihan Format Berkas -->
+                    <!-- 1. Format Berkas (PDF) -->
                     <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
                         <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">1. Format Berkas</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="exportFormatOption" value="jpg" id="exportFmtJpg" checked class="peer sr-only" onchange="updateIuranExportOptions()">
-                                <div class="p-2 rounded-xl border-2 border-slate-200 peer-checked:border-amber-500 peer-checked:bg-amber-50/70 peer-checked:text-amber-900 text-center transition-all">
-                                    <i class="fa-regular fa-image text-base block mb-0.5 text-amber-600"></i>
-                                    <span class="text-xs font-bold block">Gambar JPG</span>
-                                    <span class="text-[9px] text-slate-500 block">Siap WhatsApp</span>
-                                </div>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="exportFormatOption" value="pdf" id="exportFmtPdf" class="peer sr-only" onchange="updateIuranExportOptions()">
-                                <div class="p-2 rounded-xl border-2 border-slate-200 peer-checked:border-rose-500 peer-checked:bg-rose-50/70 peer-checked:text-rose-900 text-center transition-all">
-                                    <i class="fa-regular fa-file-pdf text-base block mb-0.5 text-rose-600"></i>
-                                    <span class="text-xs font-bold block">Dokumen PDF</span>
-                                    <span class="text-[9px] text-slate-500 block">A4 Landscape</span>
-                                </div>
-                            </label>
+                        <div class="p-2.5 rounded-xl border-2 border-rose-500 bg-rose-50/70 text-rose-900 flex items-center space-x-2.5">
+                            <i class="fa-regular fa-file-pdf text-xl text-rose-600 shrink-0"></i>
+                            <div>
+                                <span class="text-xs font-bold block leading-tight">Dokumen PDF</span>
+                                <span class="text-[10px] text-slate-500 block">A4 Landscape Siap Cetak</span>
+                            </div>
                         </div>
                     </div>
 
@@ -1337,15 +1322,15 @@
             <div class="p-4 sm:p-5 border-t border-slate-100 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div class="flex items-center space-x-2 text-xs text-slate-600">
                     <i class="fa-solid fa-circle-info text-sky-500 text-sm"></i>
-                    <span id="exportFormatHintText">File JPG berkualitas tinggi (skala tajam untuk dibagikan di WhatsApp warga).</span>
+                    <span id="exportFormatHintText">Dokumen PDF siap cetak ukuran A4 Landscape beresolusi tinggi.</span>
                 </div>
                 <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
                     <button type="button" onclick="closeIuranExportModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl cursor-pointer transition-colors">
                         Batal
                     </button>
-                    <button type="button" id="btnExecuteIuranExport" onclick="executeIuranExport()" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-amber-600/20 cursor-pointer flex items-center space-x-2 transition-all">
-                        <i class="fa-solid fa-download text-xs" id="exportBtnIcon"></i>
-                        <span id="exportBtnText">Unduh File Gambar (JPG)</span>
+                    <button type="button" id="btnExecuteIuranExport" onclick="executeIuranExport()" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-rose-600/20 cursor-pointer flex items-center space-x-2 transition-all">
+                        <i class="fa-regular fa-file-pdf text-xs" id="exportBtnIcon"></i>
+                        <span id="exportBtnText">Unduh Dokumen (PDF)</span>
                     </button>
                 </div>
             </div>
@@ -1487,6 +1472,12 @@ function canManageKas() {
 
 function canManageIuran() {
     return activeAdminSession !== null;
+}
+
+function canExportIuran() {
+    if (!activeAdminSession) return false;
+    const r = (activeAdminSession.role || '').toLowerCase();
+    return isSuperAdmin() || isBendahara() || r.includes('admin') || r.includes('bendahara');
 }
 
 function canManageWarga() {
@@ -2761,6 +2752,28 @@ function updateRoleUI() {
         }
     });
 
+    // 8. Pengaturan Tarif Bulanan (Hanya Admin / Pengurus)
+    const btnAturTarif = document.getElementById('btnAturTarifBulanan');
+    if (btnAturTarif) {
+        if (canManageIuran()) {
+            btnAturTarif.classList.remove('hidden');
+        } else {
+            btnAturTarif.classList.add('hidden');
+        }
+    }
+
+    // 9. Tombol Export Ceklis Iuran (Hanya Bendahara & Admin)
+    const exportIuranContainer = document.getElementById('containerExportIuran');
+    if (exportIuranContainer) {
+        if (typeof canExportIuran === 'function' && canExportIuran()) {
+            exportIuranContainer.classList.remove('hidden');
+            exportIuranContainer.classList.add('flex');
+        } else {
+            exportIuranContainer.classList.add('hidden');
+            exportIuranContainer.classList.remove('flex');
+        }
+    }
+
     // Re-render tab yang aktif
     const activeTab = document.querySelector('.tab-content:not(.hidden)');
     if (activeTab) {
@@ -3625,17 +3638,28 @@ function renderIuranTableHeader() {
     if (!thead) return;
     const monthsNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
     const defRate = Number(systemConfig?.nominalIuranDefault) || 20000;
+    const canEditTarif = typeof canManageIuran === 'function' ? canManageIuran() : (activeAdminSession !== null);
     
     const thMonths = monthsNames.map((m, mIdx) => {
         const mRate = getNominalIuranBulan(mIdx, currentActiveYear);
         const isChanged = mRate !== defRate;
         const rateTag = (mRate >= 1000) ? (mRate / 1000) + 'rb' : mRate;
-        return `
-            <th class="px-1 py-2.5 w-16 text-center cursor-pointer hover:bg-slate-200/70 transition-colors" onclick="openModalTarifIuran()" title="Bulan ${m} (${currentActiveYear}): Rp ${mRate.toLocaleString('id-ID')} (Klik untuk atur tarif)">
-                <div class="font-bold text-slate-700 text-xs">${m}</div>
-                <div class="mt-0.5"><span class="text-[9px] font-semibold px-1 py-0.2 rounded ${isChanged ? 'bg-amber-100 text-amber-800 border border-amber-300 font-bold' : 'text-slate-400'}">${rateTag}</span></div>
-            </th>
-        `;
+        
+        if (canEditTarif) {
+            return `
+                <th class="px-1 py-2.5 w-16 text-center cursor-pointer hover:bg-slate-200/70 transition-colors" onclick="openModalTarifIuran()" title="Bulan ${m} (${currentActiveYear}): Rp ${mRate.toLocaleString('id-ID')} (Klik untuk atur tarif)">
+                    <div class="font-bold text-slate-700 text-xs">${m}</div>
+                    <div class="mt-0.5"><span class="text-[9px] font-semibold px-1 py-0.2 rounded ${isChanged ? 'bg-amber-100 text-amber-800 border border-amber-300 font-bold' : 'text-slate-400'}">${rateTag}</span></div>
+                </th>
+            `;
+        } else {
+            return `
+                <th class="px-1 py-2.5 w-16 text-center" title="Tarif Iuran ${m} (${currentActiveYear}): Rp ${mRate.toLocaleString('id-ID')}">
+                    <div class="font-bold text-slate-700 text-xs">${m}</div>
+                    <div class="mt-0.5"><span class="text-[9px] font-semibold px-1 py-0.2 rounded ${isChanged ? 'bg-amber-100 text-amber-800 border border-amber-300 font-bold' : 'text-slate-400'}">${rateTag}</span></div>
+                </th>
+            `;
+        }
     }).join('');
 
     thead.innerHTML = `
@@ -3653,9 +3677,10 @@ function renderIuranTableHeader() {
 // =========================================================================
 
 function openModalTarifIuran() {
-    if (!activeAdminSession) {
-        openLoginModal();
-        showToastNotification('Silakan login sebagai admin untuk mengatur tarif iuran.', 'warning');
+    const hasAccess = typeof canManageIuran === 'function' ? canManageIuran() : (activeAdminSession !== null);
+    if (!hasAccess) {
+        if (typeof openLoginModal === 'function') openLoginModal();
+        showToastNotification('Fitur pengaturan tarif hanya dapat diakses oleh akun admin.', 'warning');
         return;
     }
 
@@ -3820,23 +3845,20 @@ function saveTarifBulanan() {
 
 
 // =========================================================================
-// js/iuran-export.js - Fitur Export Ceklis Iuran (JPG / PDF)
+// js/iuran-export.js - Fitur Export Ceklis Iuran (PDF)
 // =========================================================================
 
-let activeIuranExportFormat = 'jpg'; // 'jpg' atau 'pdf'
+let activeIuranExportFormat = 'pdf';
 
-function openIuranExportModal(format = 'jpg') {
-    activeIuranExportFormat = (format === 'pdf') ? 'pdf' : 'jpg';
-    
-    const radioJpg = document.getElementById('exportFmtJpg');
-    const radioPdf = document.getElementById('exportFmtPdf');
-    if (radioJpg && radioPdf) {
-        if (activeIuranExportFormat === 'pdf') {
-            radioPdf.checked = true;
-        } else {
-            radioJpg.checked = true;
-        }
+function openIuranExportModal(format = 'pdf') {
+    const hasAccess = typeof canExportIuran === 'function' ? canExportIuran() : (activeAdminSession !== null);
+    if (!hasAccess) {
+        if (typeof openLoginModal === 'function') openLoginModal();
+        showToastNotification('Fitur export ceklis iuran hanya dapat diakses oleh akun Bendahara dan Admin.', 'warning');
+        return;
     }
+
+    activeIuranExportFormat = 'pdf';
     
     updateIuranExportOptions();
     updateIuranExportPreview();
@@ -3851,28 +3873,18 @@ function closeIuranExportModal() {
 }
 
 function updateIuranExportOptions() {
-    const radioPdf = document.getElementById('exportFmtPdf');
-    activeIuranExportFormat = (radioPdf && radioPdf.checked) ? 'pdf' : 'jpg';
+    activeIuranExportFormat = 'pdf';
     
     const hintText = document.getElementById('exportFormatHintText');
     const btnText = document.getElementById('exportBtnText');
     const btnIcon = document.getElementById('exportBtnIcon');
     const executeBtn = document.getElementById('btnExecuteIuranExport');
     
-    if (activeIuranExportFormat === 'pdf') {
-        if (hintText) hintText.textContent = 'Dokumen PDF siap cetak ukuran A4 Landscape beresolusi tinggi.';
-        if (btnText) btnText.textContent = 'Unduh Dokumen (PDF)';
-        if (btnIcon) btnIcon.className = 'fa-regular fa-file-pdf text-xs';
-        if (executeBtn) {
-            executeBtn.className = 'px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-rose-600/20 cursor-pointer flex items-center space-x-2 transition-all';
-        }
-    } else {
-        if (hintText) hintText.textContent = 'File Gambar JPG jernih dan tajam (skala 2x), praktis untuk dibagikan ke WhatsApp warga.';
-        if (btnText) btnText.textContent = 'Unduh File Gambar (JPG)';
-        if (btnIcon) btnIcon.className = 'fa-regular fa-image text-xs';
-        if (executeBtn) {
-            executeBtn.className = 'px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-amber-600/20 cursor-pointer flex items-center space-x-2 transition-all';
-        }
+    if (hintText) hintText.textContent = 'Dokumen PDF siap cetak ukuran A4 Landscape beresolusi tinggi.';
+    if (btnText) btnText.textContent = 'Unduh Dokumen (PDF)';
+    if (btnIcon) btnIcon.className = 'fa-regular fa-file-pdf text-xs';
+    if (executeBtn) {
+        executeBtn.className = 'px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-rose-600/20 cursor-pointer flex items-center space-x-2 transition-all';
     }
 }
 
@@ -4146,6 +4158,12 @@ function updateIuranExportPreview() {
 }
 
 async function executeIuranExport() {
+    const hasAccess = typeof canExportIuran === 'function' ? canExportIuran() : (activeAdminSession !== null);
+    if (!hasAccess) {
+        showToastNotification('Anda tidak memiliki hak akses untuk mengekspor data iuran.', 'error');
+        return;
+    }
+
     const printArea = document.getElementById('iuranExportPrintArea');
     if (!printArea) return;
 
@@ -4182,87 +4200,67 @@ async function executeIuranExport() {
         const todayStr = new Date().toISOString().split('T')[0];
         const fileNameBase = `SIMAK_Ceklis_Iuran_${currentActiveYear}${blokSlug}_${todayStr}`;
 
-        if (activeIuranExportFormat === 'jpg') {
-            // Export JPG
-            canvas.toBlob((blob) => {
-                if (!blob) {
-                    showToastNotification('Gagal membuat gambar JPG.', 'error');
-                    return;
-                }
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${fileNameBase}.jpg`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showToastNotification('Rekap ceklis iuran berhasil diunduh sebagai gambar JPG!', 'success');
-                closeIuranExportModal();
-            }, 'image/jpeg', 0.95);
-        } else {
-            // Export PDF
-            if (!window.jspdf || !window.jspdf.jsPDF) {
-                showToastNotification('Pustaka jsPDF belum siap. Membuka jendela cetak browser...', 'warning');
-                window.print();
-                return;
-            }
-
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: 'a4'
-            });
-
-            // Dimensi A4 Landscape: 297mm x 210mm
-            // Margin 10mm kiri, kanan, atas, bawah -> printable: 277mm x 190mm
-            const marginMm = 10;
-            const printableWidthMm = 277;
-            const printableHeightMm = 190;
-
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            const imgHeightMm = (canvasHeight * printableWidthMm) / canvasWidth;
-
-            if (imgHeightMm <= printableHeightMm) {
-                // Pas dalam 1 halaman
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                pdf.addImage(imgData, 'JPEG', marginMm, marginMm, printableWidthMm, imgHeightMm);
-            } else {
-                // Multi-halaman (Iris vertikal per halaman A4)
-                let remainingHeight = canvasHeight;
-                const pageCanvasHeight = (canvasWidth * printableHeightMm) / printableWidthMm;
-                let currentY = 0;
-                let pageIndex = 1;
-
-                while (remainingHeight > 0) {
-                    const chunkHeight = Math.min(remainingHeight, pageCanvasHeight);
-                    const pageCanvas = document.createElement('canvas');
-                    pageCanvas.width = canvasWidth;
-                    pageCanvas.height = chunkHeight;
-                    const ctx = pageCanvas.getContext('2d');
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-                    ctx.drawImage(canvas, 0, currentY, canvasWidth, chunkHeight, 0, 0, canvasWidth, chunkHeight);
-
-                    const chunkHeightMm = (chunkHeight * printableWidthMm) / canvasWidth;
-                    if (pageIndex > 1) {
-                        pdf.addPage('a4', 'landscape');
-                    }
-                    const pageData = pageCanvas.toDataURL('image/jpeg', 0.95);
-                    pdf.addImage(pageData, 'JPEG', marginMm, marginMm, printableWidthMm, chunkHeightMm);
-
-                    currentY += chunkHeight;
-                    remainingHeight -= chunkHeight;
-                    pageIndex++;
-                }
-            }
-
-            pdf.save(`${fileNameBase}.pdf`);
-            showToastNotification('Rekap ceklis iuran berhasil diunduh sebagai dokumen PDF!', 'success');
-            closeIuranExportModal();
+        // Export Dokumen Cetak PDF
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            showToastNotification('Pustaka jsPDF belum siap. Membuka jendela cetak browser...', 'warning');
+            window.print();
+            return;
         }
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+            orientation: 'landscape',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        // Dimensi A4 Landscape: 297mm x 210mm
+        // Margin 10mm kiri, kanan, atas, bawah -> printable: 277mm x 190mm
+        const marginMm = 10;
+        const printableWidthMm = 277;
+        const printableHeightMm = 190;
+
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const imgHeightMm = (canvasHeight * printableWidthMm) / canvasWidth;
+
+        if (imgHeightMm <= printableHeightMm) {
+            // Pas dalam 1 halaman
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            pdf.addImage(imgData, 'JPEG', marginMm, marginMm, printableWidthMm, imgHeightMm);
+        } else {
+            // Multi-halaman (Iris vertikal per halaman A4)
+            let remainingHeight = canvasHeight;
+            const pageCanvasHeight = (canvasWidth * printableHeightMm) / printableWidthMm;
+            let currentY = 0;
+            let pageIndex = 1;
+
+            while (remainingHeight > 0) {
+                const chunkHeight = Math.min(remainingHeight, pageCanvasHeight);
+                const pageCanvas = document.createElement('canvas');
+                pageCanvas.width = canvasWidth;
+                pageCanvas.height = chunkHeight;
+                const ctx = pageCanvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+                ctx.drawImage(canvas, 0, currentY, canvasWidth, chunkHeight, 0, 0, canvasWidth, chunkHeight);
+
+                const chunkHeightMm = (chunkHeight * printableWidthMm) / canvasWidth;
+                if (pageIndex > 1) {
+                    pdf.addPage('a4', 'landscape');
+                }
+                const pageData = pageCanvas.toDataURL('image/jpeg', 0.95);
+                pdf.addImage(pageData, 'JPEG', marginMm, marginMm, printableWidthMm, chunkHeightMm);
+
+                currentY += chunkHeight;
+                remainingHeight -= chunkHeight;
+                pageIndex++;
+            }
+        }
+
+        pdf.save(`${fileNameBase}.pdf`);
+        showToastNotification('Rekap ceklis iuran berhasil diunduh sebagai dokumen PDF!', 'success');
+        closeIuranExportModal();
     } catch (err) {
         console.error('Export Ceklis Iuran Error:', err);
         showToastNotification('Terjadi kesalahan saat memproses export: ' + (err.message || 'Error rendering'), 'error');
